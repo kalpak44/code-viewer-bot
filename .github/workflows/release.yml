@@ -10,22 +10,20 @@ permissions:
   packages: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        node-version: [20]
 
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libxtst-dev libpng++-dev libx11-dev libxrandr-dev libxinerama-dev libxss-dev libxkbfile-dev libxkbcommon-dev libxkbcommon-x11-dev
+          node-version: ${{ matrix.node-version }}
 
       - name: Install vsce
         run: npm install -g @vscode/vsce
@@ -33,12 +31,43 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Package VSIX
-        run: vsce package
+      - name: Package VSIX for macOS
+        run: vsce package --out code-viewer-bot-macos.vsix
 
-      - name: Upload Release Asset
+      - name: Upload macOS Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: '*.vsix'
+          files: 'code-viewer-bot-macos.vsix'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Package VSIX for Windows
+        run: vsce package --out code-viewer-bot-windows.vsix
+
+      - name: Upload Windows Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: 'code-viewer-bot-windows.vsix'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
