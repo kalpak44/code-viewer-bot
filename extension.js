@@ -83,34 +83,34 @@ async function runBotOnFile(fileUri) {
 
 			if (!running) break;
 
-					// Close the previously opened file
-		try {
-			await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-		} catch (err) {
-			vscode.window.showWarningMessage(`Failed to close active editor: ${err.message}`);
-		}
+			// Close the previously opened file
+			try {
+				await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+			} catch (err) {
+				vscode.window.showWarningMessage(`Failed to close active editor: ${err.message}`);
+			}
 
-		// Pick a random file and show it
-		try {
-			const randomFile = files[Math.floor(Math.random() * files.length)];
-			const document = await vscode.workspace.openTextDocument(randomFile);
-			await vscode.window.showTextDocument(document, { preview: false });
-		} catch (err) {
-			vscode.window.showErrorMessage(`Failed to open file: ${err.message}`);
-			continue; // Skip this iteration and try the next file
-		}
-		
-		// Move cursor to random position with human-like speed
-		try {
-			await moveCursorToRandomPosition();
-		} catch (err) {
-			vscode.window.showWarningMessage(`Failed to move cursor: ${err.message}`);
-			// Continue running even if cursor movement fails
-		}
+			// Pick a random file and show it
+			try {
+				const randomFile = files[Math.floor(Math.random() * files.length)];
+				const document = await vscode.workspace.openTextDocument(randomFile);
+				await vscode.window.showTextDocument(document, { preview: false });
+			} catch (err) {
+				vscode.window.showErrorMessage(`Failed to open file: ${err.message}`);
+				continue; // Skip this iteration and try the next file
+			}
+			
+			// Move cursor to random position with human-like speed
+			try {
+				await moveCursorToRandomPosition();
+			} catch (err) {
+				vscode.window.showWarningMessage(`Failed to move cursor: ${err.message}`);
+				// Continue running even if cursor movement fails
+			}
 		}
 	} catch (err) {
 		vscode.window.showErrorMessage(`Error running bot: ${err.message}`);
-			} finally {
+	} finally {
 		vscode.window.showInformationMessage('Bot stopped');
 		running = false;
 		botExtension = undefined;
@@ -133,19 +133,19 @@ function activate(context) {
 			}
 		});
 
-			let stopBot = vscode.commands.registerCommand('extension.stopBot', () => {
-		try {
-			console.log('Stop Bot command executed');
-			if (!running) {
-				vscode.window.showWarningMessage('Bot is not running.');
-				return;
+		let stopBot = vscode.commands.registerCommand('extension.stopBot', () => {
+			try {
+				console.log('Stop Bot command executed');
+				if (!running) {
+					vscode.window.showWarningMessage('Bot is not running.');
+					return;
+				}
+				running = false;
+				vscode.window.showInformationMessage('Bot stopped by user');
+			} catch (err) {
+				vscode.window.showErrorMessage(`Failed to stop bot: ${err.message}`);
 			}
-			running = false;
-			vscode.window.showInformationMessage('Bot stopped by user');
-		} catch (err) {
-			vscode.window.showErrorMessage(`Failed to stop bot: ${err.message}`);
-		}
-	});
+		});
 
 		context.subscriptions.push(runBot, stopBot);
 		
