@@ -1,4 +1,4 @@
-# My First Visual Studio Code
+# My First Visual Studio Code Extension
 
 Build: 
 ```shell
