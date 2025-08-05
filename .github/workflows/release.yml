@@ -26,7 +26,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install vsce
-        run: npm install -g @vscode/vsce
+        run: npm install -g vsce
 
       - name: Install dependencies
         run: npm install
@@ -60,7 +60,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install vsce
-        run: npm install -g @vscode/vsce
+        run: npm install -g vsce
 
       - name: Install dependencies
         run: npm install
