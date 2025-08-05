@@ -1,33 +1,39 @@
 const vscode = require('vscode');
 const path = require('path');
-const {mouse, screen, straightTo} = require('@nut-tree/nut-js');
+const { mouse, screen, straightTo } = require('@nut-tree-fork/nut-js');
 
 let running = false;
 let botExtension;
 let files = [];
 
+/**
+ * Update VS Code context keys for menu/keyboard toggles
+ */
 function setBotContext(runningState, ext) {
     vscode.commands.executeCommand('setContext', 'botRunning', runningState);
     vscode.commands.executeCommand('setContext', 'botFileExtension', ext);
 }
 
+/**
+ * Move the cursor to a random point on screen.
+ */
 async function moveCursorToRandomPosition() {
     try {
-        // Get screen dimensions
         const width = await screen.width();
         const height = await screen.height();
 
-        // Pick a random point on screen
         const x = Math.floor(Math.random() * width);
         const y = Math.floor(Math.random() * height);
 
-        // Move cursor in a smooth straight line
-        await mouse.move(straightTo({x, y}));
+        await mouse.move(straightTo({ x, y }));
     } catch (err) {
         vscode.window.showErrorMessage(`Cursor movement failed: ${err.message}`);
     }
 }
 
+/**
+ * Main loop: close editor, open random file, move cursor.
+ */
 async function runBotOnFile(fileUri) {
     if (running) {
         vscode.window.showWarningMessage('Bot is already running!');
@@ -47,7 +53,7 @@ async function runBotOnFile(fileUri) {
 
     try {
         files = await vscode.workspace.findFiles(`**/*${botExtension}`);
-        if (!files.length) {
+        if (files.length === 0) {
             vscode.window.showErrorMessage(`No files found with extension ${botExtension}`);
             running = false;
             setBotContext(false);
@@ -55,20 +61,17 @@ async function runBotOnFile(fileUri) {
         }
 
         while (running) {
-            // Random delay between 15 and 30 seconds
+            // Wait 15–30 seconds
             const delay = 15000 + Math.random() * 15000;
             await new Promise(res => setTimeout(res, delay));
             if (!running) break;
 
-            // Close current editor
             await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 
-            // Open a random file
             const randomFile = files[Math.floor(Math.random() * files.length)];
             const doc = await vscode.workspace.openTextDocument(randomFile);
-            await vscode.window.showTextDocument(doc, {preview: false});
+            await vscode.window.showTextDocument(doc, { preview: false });
 
-            // Move the cursor
             await moveCursorToRandomPosition();
         }
     } catch (err) {
@@ -80,13 +83,16 @@ async function runBotOnFile(fileUri) {
     }
 }
 
+/**
+ * Extension activation: register commands.
+ */
 function activate(context) {
     setBotContext(false);
 
     const runCmd = vscode.commands.registerCommand('extension.runBot', runBotOnFile);
     const stopCmd = vscode.commands.registerCommand('extension.stopBot', () => {
         if (!running) {
-            vscode.window.showWarningMessage('Bot isn\'t running.');
+            vscode.window.showWarningMessage('Bot isn’t running.');
         }
         running = false;
     });
@@ -99,4 +105,4 @@ function deactivate() {
     setBotContext(false);
 }
 
-module.exports = {activate, deactivate};
+module.exports = { activate, deactivate };
