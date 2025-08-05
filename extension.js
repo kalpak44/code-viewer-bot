@@ -1,6 +1,14 @@
 const vscode = require('vscode');
 const path = require('path');
-const robot = require('robotjs');
+
+// Try to load robotjs, but don't fail if it's not available
+let robot;
+try {
+	robot = require('robotjs');
+} catch (err) {
+	console.error('Failed to load robotjs:', err.message);
+	robot = null;
+}
 
 let running = false;
 let botExtension = undefined;
@@ -17,6 +25,11 @@ function setBotContext(runningState, ext) {
 
 async function moveCursorToRandomPosition() {
 	try {
+		if (!robot) {
+			vscode.window.showWarningMessage('robotjs not available - cursor movement disabled');
+			return;
+		}
+		
 		// Get screen size
 		const screenSize = robot.getScreenSize();
 		
