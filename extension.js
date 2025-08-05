@@ -32,7 +32,7 @@ async function moveCursorToRandomPosition() {
 }
 
 /**
- * Main loop: close editor, open random file, move cursor.
+ * Main loop: maximize, close editor, open random file, move cursor.
  */
 async function runBotOnFile(fileUri) {
     if (running) {
@@ -44,6 +44,9 @@ async function runBotOnFile(fileUri) {
         vscode.window.showWarningMessage('Right-click a file to start the Bot.');
         return;
     }
+
+    // Enter full screen for distraction-free mode
+    await vscode.commands.executeCommand('workbench.action.toggleFullScreen');
 
     botExtension = path.extname(fileUri.fsPath);
     setBotContext(true, botExtension);
@@ -77,6 +80,9 @@ async function runBotOnFile(fileUri) {
     } catch (err) {
         vscode.window.showErrorMessage(`Bot error: ${err.message}`);
     } finally {
+        // Exit full screen if we entered it
+        await vscode.commands.executeCommand('workbench.action.toggleFullScreen');
+
         vscode.window.showInformationMessage('Bot stopped');
         running = false;
         setBotContext(false);
@@ -93,8 +99,10 @@ function activate(context) {
     const stopCmd = vscode.commands.registerCommand('extension.stopBot', () => {
         if (!running) {
             vscode.window.showWarningMessage('Bot isn’t running.');
+        } else {
+            running = false;
+            vscode.window.showInformationMessage('Bot stopped by user');
         }
-        running = false;
     });
 
     context.subscriptions.push(runCmd, stopCmd);
