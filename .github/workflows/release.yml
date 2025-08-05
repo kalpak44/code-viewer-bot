@@ -22,6 +22,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxtst-dev libpng++-dev libx11-dev libxrandr-dev libxinerama-dev libxss-dev libxkbfile-dev libxkbcommon-dev libxkbcommon-x11-dev
+
       - name: Install vsce
         run: npm install -g vsce
 
@@ -31,8 +36,9 @@ jobs:
       - name: Package VSIX
         run: vsce package
 
-      - name: Create GitHub Release
+      - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           files: '*.vsix'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
