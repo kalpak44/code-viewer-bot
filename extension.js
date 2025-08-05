@@ -60,6 +60,7 @@ async function runBotOnFile(fileUri) {
 				await editor.edit(editBuilder => {
 					editBuilder.insert(new vscode.Position(0, 0), INSERTED_LINE);
 				});
+				await document.save();
 				lastEditedDocumentUri = document.uri.toString();
 				lastEditUndo = async () => {
 					const activeEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === lastEditedDocumentUri);
@@ -68,6 +69,7 @@ async function runBotOnFile(fileUri) {
 							const line = activeEditor.document.lineAt(0);
 							editBuilder.delete(line.rangeIncludingLineBreak);
 						});
+						await activeEditor.document.save();
 					}
 				};
 			}
