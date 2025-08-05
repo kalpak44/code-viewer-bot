@@ -1,0 +1,68 @@
+{
+  "name": "code-viewer-bot",
+  "displayName": "Code Viewer Bot",
+  "description": "A joke extension that cannot be used.",
+  "version": "0.0.1",
+  "publisher": "kalpak44",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.runBot",
+    "onCommand:extension.stopBot"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.runBot",
+        "title": "Run Bot"
+      },
+      {
+        "command": "extension.stopBot",
+        "title": "Stop Bot"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "extension.runBot",
+          "title": "Run Bot",
+          "group": "navigation",
+          "when": "!botRunning"
+        },
+        {
+          "command": "extension.stopBot",
+          "title": "Stop Bot",
+          "group": "navigation",
+          "when": "botRunning"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "extension.runBot",
+          "group": "navigation",
+          "when": "!botRunning"
+        },
+        {
+          "command": "extension.stopBot",
+          "group": "navigation",
+          "when": "botRunning"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "extension.runBot",
+          "when": "!botRunning"
+        },
+        {
+          "command": "extension.stopBot",
+          "when": "botRunning"
+        }
+      ]
+    }
+  }
+}
