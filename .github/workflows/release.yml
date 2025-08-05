@@ -31,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Rebuild robotjs for macOS
+        run: npm rebuild robotjs
+
       - name: Package VSIX for macOS
         run: vsce package --out code-viewer-bot-macos.vsix
 
@@ -61,6 +64,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Rebuild robotjs for Windows
+        run: npm rebuild robotjs
 
       - name: Package VSIX for Windows
         run: vsce package --out code-viewer-bot-windows.vsix
