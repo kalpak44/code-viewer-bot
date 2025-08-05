@@ -5,7 +5,6 @@ const robot = require('robotjs');
 let running = false;
 let botExtension = undefined;
 let files = [];
-let stopRequested = false;
 
 function setBotContext(runningState, ext) {
 	try {
@@ -60,7 +59,6 @@ async function runBotOnFile(fileUri) {
 	botExtension = path.extname(fileUri.fsPath);
 	setBotContext(true, botExtension);
 	running = true;
-	stopRequested = false;
 
 	vscode.window.showInformationMessage(`Bot started for files with extension ${botExtension}`);
 
@@ -73,17 +71,17 @@ async function runBotOnFile(fileUri) {
 			return;
 		}
 
-		while (running && !stopRequested) {
+		while (running) {
 			// Random delay between 15 and 30 seconds
 			const delayMs = Math.floor(Math.random() * (30000 - 15000 + 1)) + 15000;
 			
 			// Check for stop request every 1 second during the delay
 			for (let i = 0; i < delayMs; i += 1000) {
-				if (!running || stopRequested) break;
+				if (!running) break;
 				await new Promise(resolve => setTimeout(resolve, Math.min(1000, delayMs - i)));
 			}
 
-			if (!running || stopRequested) break;
+			if (!running) break;
 
 					// Close the previously opened file
 		try {
@@ -113,10 +111,8 @@ async function runBotOnFile(fileUri) {
 	} catch (err) {
 		vscode.window.showErrorMessage(`Error running bot: ${err.message}`);
 			} finally {
-		const stopMessage = stopRequested ? 'Bot stopped by ESC key!' : 'Bot stopped';
-		vscode.window.showInformationMessage(stopMessage);
+		vscode.window.showInformationMessage('Bot stopped');
 		running = false;
-		stopRequested = false;
 		botExtension = undefined;
 		setBotContext(false, undefined);
 	}
@@ -144,7 +140,6 @@ function activate(context) {
 				vscode.window.showWarningMessage('Bot is not running.');
 				return;
 			}
-			stopRequested = true;
 			running = false;
 			vscode.window.showInformationMessage('Bot stopped by user');
 		} catch (err) {
@@ -163,7 +158,6 @@ function activate(context) {
 
 function deactivate() {
 	running = false;
-	stopRequested = false;
 	setBotContext(false, undefined);
 }
 
