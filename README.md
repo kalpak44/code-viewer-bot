@@ -1,6 +1,6 @@
 # Code Viewer Bot
 
-A Visual Studio Code extension that provides bot-driven code viewing features. (Currently a joke extension that cannot be used.)
+A Visual Studio Code joke extension that cannot be used at the work ;)
 
 ## Features
 - Run and stop the bot from the command palette or context menus.
