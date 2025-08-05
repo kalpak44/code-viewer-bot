@@ -19,9 +19,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished",
-    "onCommand:extension.runBot",
-    "onCommand:extension.stopBot"
+    "*"
   ],
   "main": "./extension.js",
   "contributes": {
