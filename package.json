@@ -70,6 +70,13 @@
           "when": "botRunning"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "extension.stopBot",
+        "key": "escape",
+        "when": "botRunning"
+      }
+    ]
   }
 }
