@@ -7,6 +7,10 @@ try {
 	console.log('Attempting to load robotjs...');
 	robot = require('robotjs');
 	console.log('robotjs loaded successfully');
+	
+	// Test if robotjs is working by trying to get screen size
+	const screenSize = robot.getScreenSize();
+	console.log('robotjs test successful - screen size:', screenSize);
 } catch (err) {
 	console.error('Failed to load robotjs:', err.message);
 	console.error('Error stack:', err.stack);
@@ -137,6 +141,22 @@ async function runBotOnFile(fileUri) {
 function activate(context) {
 	try {
 		console.log('Code Viewer Bot extension is now active!');
+		
+		// Try to initialize robotjs if it wasn't loaded initially
+		if (!robot) {
+			try {
+				console.log('Retrying robotjs loading...');
+				robot = require('robotjs');
+				const screenSize = robot.getScreenSize();
+				console.log('robotjs loaded successfully on retry - screen size:', screenSize);
+				vscode.window.showInformationMessage('robotjs loaded successfully - cursor movement enabled!');
+			} catch (retryErr) {
+				console.error('robotjs retry failed:', retryErr.message);
+				vscode.window.showWarningMessage('robotjs not available - cursor movement will be disabled');
+			}
+		} else {
+			vscode.window.showInformationMessage('robotjs loaded successfully - cursor movement enabled!');
+		}
 		
 		setBotContext(false, undefined);
 
