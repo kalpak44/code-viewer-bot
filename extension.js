@@ -4,10 +4,6 @@ const path = require('path');
 let running = false;
 let botExtension = undefined;
 let files = [];
-const INSERTED_LINE = '\n';
-
-let lastEditedDocumentUri = null;
-let lastEditUndo = null;
 
 function setBotContext(runningState, ext) {
 	vscode.commands.executeCommand('setContext', 'botRunning', runningState);
@@ -53,32 +49,7 @@ async function runBotOnFile(fileUri) {
 			// Pick a random file and show it
 			const randomFile = files[Math.floor(Math.random() * files.length)];
 			const document = await vscode.workspace.openTextDocument(randomFile);
-			const editor = await vscode.window.showTextDocument(document, { preview: false });
-
-			// Insert a single new line at the top (only if not already inserted)
-			if (editor && document && document.lineCount > 0 && document.lineAt(0).text !== '') {
-				await editor.edit(editBuilder => {
-					editBuilder.insert(new vscode.Position(0, 0), INSERTED_LINE);
-				});
-				await document.save();
-				lastEditedDocumentUri = document.uri.toString();
-				lastEditUndo = async () => {
-					const activeEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === lastEditedDocumentUri);
-					if (activeEditor && activeEditor.document.lineAt(0).text === '') {
-						await activeEditor.edit(editBuilder => {
-							const line = activeEditor.document.lineAt(0);
-							editBuilder.delete(line.rangeIncludingLineBreak);
-						});
-						await activeEditor.document.save();
-					}
-				};
-			}
-		}
-		// Clean up inserted line if present
-		if (lastEditUndo) {
-			await lastEditUndo();
-			lastEditUndo = null;
-			lastEditedDocumentUri = null;
+			await vscode.window.showTextDocument(document, { preview: false });
 		}
 	} catch (err) {
 		vscode.window.showErrorMessage(`Error running bot: ${err.message}`);
@@ -97,17 +68,12 @@ function activate(context) {
 		runBotOnFile(fileUri);
 	});
 
-	let stopBot = vscode.commands.registerCommand('extension.stopBot', async () => {
+	let stopBot = vscode.commands.registerCommand('extension.stopBot', () => {
 		if (!running) {
 			vscode.window.showWarningMessage('Bot is not running.');
 			return;
 		}
 		running = false;
-		if (lastEditUndo) {
-			await lastEditUndo();
-			lastEditUndo = null;
-			lastEditedDocumentUri = null;
-		}
 		vscode.window.showInformationMessage('Bot stopped by user');
 	});
 
