@@ -16,7 +16,7 @@
     "@nut-tree-fork/nut-js": "^4.2.6"
   },
   "devDependencies": {
-    "@vscode/vsce": "^4.0.0"
+    "vsce": "^2.11.0"
   },
   "scripts": {
     "postinstall": "echo \"Rebuilding native modules for nut-js...\" && npm rebuild @nut-tree-fork/nut-js || true"
@@ -30,8 +30,14 @@
   "main": "./extension.js",
   "contributes": {
     "commands": [
-      { "command": "extension.runBot", "title": "Run Bot" },
-      { "command": "extension.stopBot", "title": "Stop Bot" }
+      {
+        "command": "extension.runBot",
+        "title": "Run Bot"
+      },
+      {
+        "command": "extension.stopBot",
+        "title": "Stop Bot"
+      }
     ],
     "menus": {
       "explorer/context": [
@@ -59,8 +65,14 @@
         }
       ],
       "commandPalette": [
-        { "command": "extension.runBot", "when": "!botRunning" },
-        { "command": "extension.stopBot", "when": "botRunning" }
+        {
+          "command": "extension.runBot",
+          "when": "!botRunning"
+        },
+        {
+          "command": "extension.stopBot",
+          "when": "botRunning"
+        }
       ]
     },
     "keybindings": [
