@@ -4,6 +4,11 @@
   "description": "A joke extension that cannot be used.",
   "version": "0.0.1",
   "publisher": "kalpak44",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kalpak44/code-viewer-bot.git"
+  },
   "engines": {
     "vscode": "^1.60.0"
   },
