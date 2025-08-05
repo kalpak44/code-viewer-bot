@@ -5,20 +5,34 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install -g vsce
-      - run: npm install
-      - run: vsce package
-      - name: Upload Release Asset
+
+      - name: Install vsce
+        run: npm install -g vsce
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Package VSIX
+        run: vsce package
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           files: '*.vsix'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
