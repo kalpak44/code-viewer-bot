@@ -1,7 +1,7 @@
 {
   "name": "code-viewer-bot",
   "displayName": "Code Viewer Bot",
-  "description": "A joke extension that cannot be used.",
+  "description": "A joke extension that randomly opens files and moves the cursor.",
   "version": "0.0.1",
   "publisher": "kalpak44",
   "license": "MIT",
@@ -13,7 +13,13 @@
     "vscode": "^1.60.0"
   },
   "dependencies": {
-    "robotjs": "^0.6.0"
+    "@nut-tree/nut-js": "^4.7.0"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^4.0.0"
+  },
+  "scripts": {
+    "postinstall": "echo \"Rebuilding native modules for nut-js...\" && npm rebuild @nut-tree/nut-js || true"
   },
   "categories": [
     "Other"
@@ -37,27 +43,25 @@
       "explorer/context": [
         {
           "command": "extension.runBot",
-          "title": "Run Bot",
-          "group": "navigation",
-          "when": "!botRunning"
+          "when": "!botRunning",
+          "group": "navigation"
         },
         {
           "command": "extension.stopBot",
-          "title": "Stop Bot",
-          "group": "navigation",
-          "when": "botRunning"
+          "when": "botRunning",
+          "group": "navigation"
         }
       ],
       "editor/context": [
         {
           "command": "extension.runBot",
-          "group": "navigation",
-          "when": "!botRunning"
+          "when": "!botRunning",
+          "group": "navigation"
         },
         {
           "command": "extension.stopBot",
-          "group": "navigation",
-          "when": "botRunning"
+          "when": "botRunning",
+          "group": "navigation"
         }
       ],
       "commandPalette": [
