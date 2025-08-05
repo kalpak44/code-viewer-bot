@@ -91,13 +91,17 @@ async function runBotOnFile(fileUri) {
 }
 
 function activate(context) {
+	console.log('Code Viewer Bot extension is now active!');
+	
 	setBotContext(false, undefined);
 
 	let runBot = vscode.commands.registerCommand('extension.runBot', async (fileUri) => {
+		console.log('Run Bot command executed with fileUri:', fileUri);
 		runBotOnFile(fileUri);
 	});
 
 	let stopBot = vscode.commands.registerCommand('extension.stopBot', () => {
+		console.log('Stop Bot command executed');
 		if (!running) {
 			vscode.window.showWarningMessage('Bot is not running.');
 			return;
@@ -107,6 +111,8 @@ function activate(context) {
 	});
 
 	context.subscriptions.push(runBot, stopBot);
+	
+	console.log('Commands registered successfully');
 }
 
 function deactivate() {
