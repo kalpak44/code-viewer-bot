@@ -2,7 +2,7 @@
   "name": "code-viewer-bot",
   "displayName": "Code Viewer Bot",
   "description": "A joke extension that cannot be used.",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "publisher": "kalpak44",
   "license": "MIT",
   "repository": {
