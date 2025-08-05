@@ -4,9 +4,12 @@ const path = require('path');
 // Try to load robotjs, but don't fail if it's not available
 let robot;
 try {
+	console.log('Attempting to load robotjs...');
 	robot = require('robotjs');
+	console.log('robotjs loaded successfully');
 } catch (err) {
 	console.error('Failed to load robotjs:', err.message);
+	console.error('Error stack:', err.stack);
 	robot = null;
 }
 
