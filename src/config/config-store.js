@@ -1,25 +1,23 @@
 const { CONFIG_KEY, DEFAULT_CONFIG } = require('../constants');
 
-function cloneConfig(config) {
-    return JSON.parse(JSON.stringify(config));
-}
+const cloneConfig = (config) => JSON.parse(JSON.stringify(config));
 
-function normalizeWindow(windowConfig) {
+const normalizeWindow = (windowConfig) => {
     const start = typeof windowConfig?.start === 'string' ? windowConfig.start : '09:00';
     const end = typeof windowConfig?.end === 'string' ? windowConfig.end : '17:00';
     return { start, end };
-}
+};
 
-function normalizeNumber(value, fallback, min, max) {
+const normalizeNumber = (value, fallback, min, max) => {
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) {
         return fallback;
     }
 
     return Math.max(min, Math.min(max, Math.round(parsed)));
-}
+};
 
-function normalizeConfig(value) {
+const normalizeConfig = (value) => {
     const schedule = value && typeof value === 'object' ? value.schedule : null;
     const windows = Array.isArray(schedule?.windows)
         ? schedule.windows.map(normalizeWindow).filter((windowConfig) => windowConfig.start && windowConfig.end)
@@ -43,26 +41,19 @@ function normalizeConfig(value) {
             windows: windows.length > 0 ? windows : cloneConfig(DEFAULT_CONFIG.schedule.windows)
         }
     };
-}
+};
 
-class ConfigStore {
-    constructor(extensionContext) {
-        this.extensionContext = extensionContext;
-    }
-
-    load() {
-        return normalizeConfig(this.extensionContext.globalState.get(CONFIG_KEY, DEFAULT_CONFIG));
-    }
-
-    async save(config) {
+const createConfigStore = (extensionContext) => ({
+    load: () => normalizeConfig(extensionContext.globalState.get(CONFIG_KEY, DEFAULT_CONFIG)),
+    save: async (config) => {
         const normalized = normalizeConfig(config);
-        await this.extensionContext.globalState.update(CONFIG_KEY, normalized);
+        await extensionContext.globalState.update(CONFIG_KEY, normalized);
         return normalized;
     }
-}
+});
 
 module.exports = {
-    ConfigStore,
+    createConfigStore,
     cloneConfig,
     normalizeConfig
 };

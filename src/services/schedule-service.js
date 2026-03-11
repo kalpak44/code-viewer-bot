@@ -1,41 +1,24 @@
 const { parseTimeToMinutes, formatMinutes, getDateKey } = require('../utils/time');
 const { randomInt } = require('../utils/math');
 
-class ScheduleService {
-    constructor({ logger }) {
-        this.logger = logger;
-        this.config = null;
-        this.dailySchedule = {
+const createScheduleService = ({ logger }) => {
+    let config = null;
+    let dailySchedule = {
+        dateKey: null,
+        windows: []
+    };
+
+    const setConfig = (nextConfig) => {
+        config = nextConfig;
+        dailySchedule = {
             dateKey: null,
             windows: []
         };
-    }
+    };
 
-    setConfig(config) {
-        this.config = config;
-        this.dailySchedule = {
-            dateKey: null,
-            windows: []
-        };
-    }
-
-    ensureDailySchedule(now = new Date()) {
-        if (!this.config?.schedule.enabled) {
-            return false;
-        }
-
-        const todayKey = getDateKey(now);
-        if (this.dailySchedule.dateKey === todayKey) {
-            return false;
-        }
-
-        this.buildDailySchedule(now);
-        return true;
-    }
-
-    buildDailySchedule(now = new Date()) {
-        const offsetRange = this.config.schedule.randomOffsetMinutes;
-        const windows = this.config.schedule.windows.map((windowConfig) => {
+    const buildDailySchedule = (now = new Date()) => {
+        const offsetRange = config.schedule.randomOffsetMinutes;
+        const windows = config.schedule.windows.map((windowConfig) => {
             const startBase = parseTimeToMinutes(windowConfig.start);
             const endBase = parseTimeToMinutes(windowConfig.end);
 
@@ -57,51 +40,72 @@ class ScheduleService {
             };
         });
 
-        this.dailySchedule = {
+        dailySchedule = {
             dateKey: getDateKey(now),
             windows
         };
 
-        this.logger(`Schedule for ${this.dailySchedule.dateKey}:`);
+        logger(`Schedule for ${dailySchedule.dateKey}:`);
         for (const windowConfig of windows) {
-            this.logger(`- ${windowConfig.startText} -> ${windowConfig.endText}`);
+            logger(`- ${windowConfig.startText} -> ${windowConfig.endText}`);
         }
-    }
+    };
 
-    isWithinAllowedTime(now = new Date()) {
-        if (!this.config?.schedule.enabled) {
+    const ensureDailySchedule = (now = new Date()) => {
+        if (!config?.schedule.enabled) {
+            return false;
+        }
+
+        const todayKey = getDateKey(now);
+        if (dailySchedule.dateKey === todayKey) {
+            return false;
+        }
+
+        buildDailySchedule(now);
+        return true;
+    };
+
+    const isWithinAllowedTime = (now = new Date()) => {
+        if (!config?.schedule.enabled) {
             return true;
         }
 
-        this.ensureDailySchedule(now);
+        ensureDailySchedule(now);
 
         const currentMinutes = (now.getHours() * 60) + now.getMinutes();
-        return this.dailySchedule.windows.some((windowConfig) => (
+        return dailySchedule.windows.some((windowConfig) => (
             currentMinutes >= windowConfig.startMinutes &&
             currentMinutes < windowConfig.endMinutes
         ));
-    }
+    };
 
-    getSummary() {
-        if (!this.config?.schedule.enabled) {
+    const getSummary = () => {
+        if (!config?.schedule.enabled) {
             return {
                 dateKey: null,
                 windows: []
             };
         }
 
-        this.ensureDailySchedule();
+        ensureDailySchedule();
 
         return {
-            dateKey: this.dailySchedule.dateKey,
-            windows: this.dailySchedule.windows.map((windowConfig) => ({
+            dateKey: dailySchedule.dateKey,
+            windows: dailySchedule.windows.map((windowConfig) => ({
                 start: windowConfig.startText,
                 end: windowConfig.endText
             }))
         };
-    }
-}
+    };
+
+    return {
+        setConfig,
+        ensureDailySchedule,
+        isWithinAllowedTime,
+        getSummary
+    };
+};
 
 module.exports = {
-    ScheduleService
+    createScheduleService
 };
