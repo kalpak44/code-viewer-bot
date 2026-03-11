@@ -10,70 +10,47 @@ permissions:
   packages: write
 
 jobs:
-  build-macos:
-    runs-on: macos-latest
+  build:
     strategy:
       matrix:
-        node-version: [20]
+        include:
+          - os: macos-latest
+            target: darwin-arm64
+            asset_name: code-viewer-bot-darwin-arm64.vsix
+          - os: macos-15-intel
+            target: darwin-x64
+            asset_name: code-viewer-bot-darwin-x64.vsix
+          - os: windows-latest
+            target: win32-x64
+            asset_name: code-viewer-bot-win32-x64.vsix
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js ${{ matrix.node-version }}
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
+          cache: npm
 
       - name: Install @vscode/vsce
         run: npm install -g @vscode/vsce
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Rebuild @nut-tree-fork/nut-js for macOS
-        run: npm rebuild @nut-tree-fork/nut-js || true
+      - name: Rebuild robotjs
+        run: npm rebuild robotjs || true
 
-      - name: Package VSIX for macOS
-        run: vsce package --out code-viewer-bot-macos.vsix
+      - name: Package VSIX
+        run: vsce package --target ${{ matrix.target }} --out ${{ matrix.asset_name }}
 
-      - name: Upload macOS Release Asset
+      - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: 'code-viewer-bot-macos.vsix'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  build-windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        node-version: [20]
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Install @vscode/vsce
-        run: npm install -g @vscode/vsce
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Rebuild @nut-tree-fork/nut-js for Windows
-        run: npm rebuild @nut-tree-fork/nut-js || true
-
-      - name: Package VSIX for Windows
-        run: vsce package --out code-viewer-bot-windows.vsix
-
-      - name: Upload Windows Release Asset
-        uses: softprops/action-gh-release@v2
-        with:
-          files: 'code-viewer-bot-windows.vsix'
+          files: ${{ matrix.asset_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
