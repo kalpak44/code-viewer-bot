@@ -1,7 +1,7 @@
 {
   "name": "code-viewer-bot",
   "displayName": "Code Viewer Bot",
-  "description": "A joke extension that randomly opens files and moves the cursor.",
+  "description": "A configurable mouse-rotation bot for VS Code with scheduled idle automation.",
   "version": "0.0.1",
   "publisher": "kalpak44",
   "license": "MIT",
@@ -10,78 +10,38 @@
     "url": "https://github.com/kalpak44/code-viewer-bot.git"
   },
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.61.0"
   },
   "dependencies": {
-    "@nut-tree-fork/nut-js": "^4.2.6"
+    "robotjs": "^0.7.0"
   },
   "devDependencies": {
     "@vscode/vsce": "^3.7.1"
   },
   "scripts": {
-    "postinstall": "echo \"Rebuilding native modules for nut-js...\" && npm rebuild @nut-tree-fork/nut-js || true"
+    "postinstall": "echo \"Rebuilding native modules for robotjs...\" && npm rebuild robotjs || true"
   },
   "categories": [
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.runBot",
-    "onCommand:extension.stopBot"
+    "onStartupFinished",
+    "onCommand:extension.openConfig"
   ],
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "extension.runBot",
-        "title": "Run Bot"
-      },
-      {
-        "command": "extension.stopBot",
-        "title": "Stop Bot"
+        "command": "extension.openConfig",
+        "title": "Open Bot Configuration"
       }
     ],
     "menus": {
-      "explorer/context": [
-        {
-          "command": "extension.runBot",
-          "when": "!botRunning",
-          "group": "navigation"
-        },
-        {
-          "command": "extension.stopBot",
-          "when": "botRunning",
-          "group": "navigation"
-        }
-      ],
-      "editor/context": [
-        {
-          "command": "extension.runBot",
-          "when": "!botRunning",
-          "group": "navigation"
-        },
-        {
-          "command": "extension.stopBot",
-          "when": "botRunning",
-          "group": "navigation"
-        }
-      ],
       "commandPalette": [
         {
-          "command": "extension.runBot",
-          "when": "!botRunning"
-        },
-        {
-          "command": "extension.stopBot",
-          "when": "botRunning"
+          "command": "extension.openConfig"
         }
       ]
-    },
-    "keybindings": [
-      {
-        "command": "extension.stopBot",
-        "key": "escape",
-        "when": "botRunning"
-      }
-    ]
+    }
   }
 }
