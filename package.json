@@ -23,7 +23,7 @@
   "scripts": {
     "build": "node esbuild.js --production",
     "build:dev": "node esbuild.js",
-    "postinstall": "echo \"Rebuilding native modules for robotjs...\" && npm rebuild robotjs || true",
+    "postinstall": "node scripts/postinstall.js",
     "vscode:prepublish": "npm run build"
   },
   "categories": [
