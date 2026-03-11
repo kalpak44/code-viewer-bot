@@ -38,27 +38,47 @@ jobs:
         run: |
           mkdir -p dist
           gh release download "v${{ inputs.version }}" \
-            --pattern "*.vsix" \
+            --pattern "code-viewer-bot-*.vsix" \
             --dir dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Show downloaded artifacts
+      - name: Verify expected VSIX artifacts
         run: |
           ls -lah dist
-          test -n "$(find dist -maxdepth 1 -name '*.vsix' -print -quit)" || {
-            echo "No .vsix files were found in release v${{ inputs.version }}"
+          expected=(
+            "code-viewer-bot-linux-x64.vsix"
+            "code-viewer-bot-darwin-arm64.vsix"
+            "code-viewer-bot-darwin-x64.vsix"
+            "code-viewer-bot-win32-x64.vsix"
+          )
+
+          missing=0
+
+          for file in "${expected[@]}"; do
+            if [[ ! -f "dist/$file" ]]; then
+              echo "Missing expected artifact: $file"
+              missing=1
+            fi
+          done
+
+          if [[ "$missing" -ne 0 ]]; then
+            echo "Release v${{ inputs.version }} does not contain the full set of platform VSIX files."
             exit 1
-          }
+          fi
 
       - name: Publish VSIX files to Visual Studio Marketplace
         run: |
-          shopt -s nullglob
-          files=(dist/*.vsix)
+          files=(
+            "dist/code-viewer-bot-linux-x64.vsix"
+            "dist/code-viewer-bot-darwin-arm64.vsix"
+            "dist/code-viewer-bot-darwin-x64.vsix"
+            "dist/code-viewer-bot-win32-x64.vsix"
+          )
 
           for file in "${files[@]}"; do
             echo "Publishing $file"
-            vsce publish --packagePath "$file"
+            vsce publish --packagePath "$file" --skip-duplicate
           done
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
