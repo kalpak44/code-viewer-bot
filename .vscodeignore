@@ -1,4 +1,6 @@
 .vscode/**
+.github/**
+.idea/**
 .vscode-test/**
 test/**
 .gitignore
@@ -8,3 +10,4 @@ vsc-extension-quickstart.md
 **/*.map
 **/eslint.config.mjs
 **/.vscode-test.*
+extension.js
