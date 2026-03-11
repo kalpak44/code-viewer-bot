@@ -16,7 +16,7 @@
     "@nut-tree-fork/nut-js": "^4.2.6"
   },
   "devDependencies": {
-    "@vscode/vsce": "^2.23.0"
+    "@vscode/vsce": "^3.7.1"
   },
   "scripts": {
     "postinstall": "echo \"Rebuilding native modules for nut-js...\" && npm rebuild @nut-tree-fork/nut-js || true"
