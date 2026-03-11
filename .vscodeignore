@@ -3,7 +3,9 @@
 .idea/**
 .vscode-test/**
 test/**
+.git/**
 .gitignore
+.gitattributes
 .yarnrc
 vsc-extension-quickstart.md
 **/jsconfig.json
@@ -11,3 +13,5 @@ vsc-extension-quickstart.md
 **/eslint.config.mjs
 **/.vscode-test.*
 extension.js
+src/**
+esbuild.js

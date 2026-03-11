@@ -2,22 +2,28 @@ const vscode = require('vscode');
 const { PANEL_TYPE } = require('../constants');
 const { getConfigPanelHtml } = require('./config-panel-html');
 
-class ConfigPanel {
-    constructor({ extensionContext, onSave, getState }) {
-        this.extensionContext = extensionContext;
-        this.onSave = onSave;
-        this.getState = getState;
-        this.panel = null;
-    }
+const createConfigPanel = ({ extensionContext, onSave, getState }) => {
+    let panel = null;
 
-    show() {
-        if (this.panel) {
-            this.panel.reveal(vscode.ViewColumn.One);
-            this.postState();
+    const postState = () => {
+        if (!panel) {
             return;
         }
 
-        this.panel = vscode.window.createWebviewPanel(
+        panel.webview.postMessage({
+            command: 'state',
+            state: getState()
+        });
+    };
+
+    const show = () => {
+        if (panel) {
+            panel.reveal(vscode.ViewColumn.One);
+            postState();
+            return;
+        }
+
+        panel = vscode.window.createWebviewPanel(
             PANEL_TYPE,
             'Code Viewer Bot',
             vscode.ViewColumn.One,
@@ -27,40 +33,34 @@ class ConfigPanel {
             }
         );
 
-        this.panel.webview.html = getConfigPanelHtml();
-        this.panel.onDidDispose(() => {
-            this.panel = null;
-        }, null, this.extensionContext.subscriptions);
+        panel.webview.html = getConfigPanelHtml();
+        panel.onDidDispose(() => {
+            panel = null;
+        }, null, extensionContext.subscriptions);
 
-        this.panel.webview.onDidReceiveMessage(async (message) => {
+        panel.webview.onDidReceiveMessage(async (message) => {
             switch (message.command) {
                 case 'ready':
-                    this.postState();
+                    postState();
                     return;
                 case 'save':
-                    await this.onSave(message.config);
+                    await onSave(message.config);
                     vscode.window.showInformationMessage('Bot configuration saved.');
                     return;
                 default:
                     return;
             }
-        }, undefined, this.extensionContext.subscriptions);
+        }, undefined, extensionContext.subscriptions);
 
-        this.postState();
-    }
+        postState();
+    };
 
-    postState() {
-        if (!this.panel) {
-            return;
-        }
-
-        this.panel.webview.postMessage({
-            command: 'state',
-            state: this.getState()
-        });
-    }
-}
+    return {
+        show,
+        postState
+    };
+};
 
 module.exports = {
-    ConfigPanel
+    createConfigPanel
 };
