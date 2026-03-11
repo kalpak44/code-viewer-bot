@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
       - name: Ensure GitHub release exists
         run: |
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
