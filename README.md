@@ -5,14 +5,14 @@ Code Viewer Bot is a Visual Studio Code extension that starts automatically when
 ## Screenshots
 
 ### Configuration Panel
-![Configuration panel placeholder](docs/screenshots/config-panel.svg)
+![Configuration panel placeholder](docs/screenshots/config-panel.png)
 
-Replace this placeholder with: `docs/screenshots/config-panel.svg`
+Replace this placeholder with: `docs/screenshots/config-panel.png`
 
 ### Schedule Summary
-![Schedule summary placeholder](docs/screenshots/schedule-summary.svg)
+![Schedule summary placeholder](docs/screenshots/schedule-summary.png)
 
-Replace this placeholder with: `docs/screenshots/schedule-summary.svg`
+Replace this placeholder with: `docs/screenshots/schedule-summary.png`
 
 ## Features
 
