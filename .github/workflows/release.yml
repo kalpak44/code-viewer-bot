@@ -1,5 +1,8 @@
 name: Release VS Code Extension
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   push:
     tags:
@@ -28,12 +31,12 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install @vscode/vsce
@@ -42,6 +45,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build extension bundle
+        run: npm run build
+
       - name: Rebuild robotjs
         run: npm rebuild robotjs || true
 
@@ -49,7 +55,7 @@ jobs:
         run: vsce package --target ${{ matrix.target }} --out ${{ matrix.asset_name }}
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.5.0
         with:
           files: ${{ matrix.asset_name }}
         env:

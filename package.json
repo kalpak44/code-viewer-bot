@@ -9,6 +9,7 @@
     "type": "git",
     "url": "https://github.com/kalpak44/code-viewer-bot.git"
   },
+  "packageManager": "npm@11.9.0",
   "engines": {
     "vscode": "^1.61.0"
   },
@@ -16,10 +17,14 @@
     "robotjs": "^0.7.0"
   },
   "devDependencies": {
+    "esbuild": "^0.25.1",
     "@vscode/vsce": "^3.7.1"
   },
   "scripts": {
-    "postinstall": "echo \"Rebuilding native modules for robotjs...\" && npm rebuild robotjs || true"
+    "build": "node esbuild.js --production",
+    "build:dev": "node esbuild.js",
+    "postinstall": "echo \"Rebuilding native modules for robotjs...\" && npm rebuild robotjs || true",
+    "vscode:prepublish": "npm run build"
   },
   "categories": [
     "Other"
@@ -28,20 +33,35 @@
     "onStartupFinished",
     "onCommand:extension.openConfig"
   ],
-  "main": "./src/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "extension.openConfig",
-        "title": "Open Bot Configuration"
+        "title": "Open Configuration",
+        "category": "Code Viewer Bot"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "extension.openConfig"
+          "command": "extension.openConfig",
+          "group": "navigation"
+        }
+      ],
+      "menubar/view": [
+        {
+          "command": "extension.openConfig",
+          "group": "9_code-viewer-bot"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "extension.openConfig",
+        "key": "ctrl+alt+b",
+        "mac": "cmd+alt+b"
+      }
+    ]
   }
 }

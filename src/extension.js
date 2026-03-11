@@ -1,28 +1,26 @@
 const vscode = require('vscode');
-const { ConfigStore } = require('./config/config-store');
-const { MouseBot } = require('./services/mouse-bot');
-const { ConfigPanel } = require('./ui/config-panel');
+const { createConfigStore } = require('./config/config-store');
+const { createMouseBot } = require('./services/mouse-bot');
+const { createConfigPanel } = require('./ui/config-panel');
 
 let bot;
 let configPanel;
 
-function setBotContext(runningState) {
+const setBotContext = (runningState) => {
     vscode.commands.executeCommand('setContext', 'botRunning', runningState);
-}
+};
 
-function createLogger(outputChannel) {
-    return (message) => {
-        outputChannel.appendLine(message);
-    };
-}
+const createLogger = (outputChannel) => (message) => {
+    outputChannel.appendLine(message);
+};
 
-async function activate(context) {
+const activate = async (context) => {
     const outputChannel = vscode.window.createOutputChannel('Code Viewer Bot');
-    const configStore = new ConfigStore(context);
+    const configStore = createConfigStore(context);
     const logger = createLogger(outputChannel);
     const initialConfig = configStore.load();
 
-    bot = new MouseBot({
+    bot = createMouseBot({
         initialConfig,
         logger,
         onStateChange: (state) => {
@@ -33,7 +31,7 @@ async function activate(context) {
         }
     });
 
-    configPanel = new ConfigPanel({
+    configPanel = createConfigPanel({
         extensionContext: context,
         onSave: async (config) => {
             const nextConfig = await configStore.save(config);
@@ -54,13 +52,13 @@ async function activate(context) {
     );
 
     await bot.start();
-}
+};
 
-function deactivate() {
+const deactivate = () => {
     if (bot) {
         bot.stop();
     }
-}
+};
 
 module.exports = {
     activate,
