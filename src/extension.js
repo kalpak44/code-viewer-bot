@@ -43,7 +43,10 @@ const activate = async (context) => {
     setBotContext(false);
     context.subscriptions.push(outputChannel);
     context.subscriptions.push(
-        vscode.commands.registerCommand('extension.openConfig', () => configPanel.show()),
+        vscode.commands.registerCommand('codeViewerBot.openConfiguration', () => configPanel.show()),
+        vscode.workspace.onDidChangeWorkspaceFolders(() => {
+            bot.handleWorkspaceChange();
+        }),
         {
             dispose() {
                 bot.stop();

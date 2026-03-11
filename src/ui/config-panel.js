@@ -45,7 +45,6 @@ const createConfigPanel = ({ extensionContext, onSave, getState }) => {
                     return;
                 case 'save':
                     await onSave(message.config);
-                    vscode.window.showInformationMessage('Bot configuration saved.');
                     return;
                 default:
                     return;

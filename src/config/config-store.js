@@ -1,4 +1,9 @@
-const { CONFIG_KEY, DEFAULT_CONFIG } = require('../constants');
+const {
+    CONFIG_KEY,
+    DEFAULT_CONFIG,
+    LEGACY_WORKSPACE_EXCLUDE_GLOB,
+    DEFAULT_WORKSPACE_EXCLUDE_GLOB
+} = require('../constants');
 
 const cloneConfig = (config) => JSON.parse(JSON.stringify(config));
 
@@ -17,8 +22,32 @@ const normalizeNumber = (value, fallback, min, max) => {
     return Math.max(min, Math.min(max, Math.round(parsed)));
 };
 
+const normalizeExtension = (value, fallback) => {
+    const raw = typeof value === 'string' ? value.trim() : fallback;
+    if (!raw) {
+        return fallback;
+    }
+
+    return raw.startsWith('.') ? raw.toLowerCase() : `.${raw.toLowerCase()}`;
+};
+
+const normalizeString = (value, fallback) => {
+    const raw = typeof value === 'string' ? value.trim() : '';
+    return raw || fallback;
+};
+
+const normalizeExcludeGlob = (value) => {
+    const normalized = normalizeString(value, DEFAULT_WORKSPACE_EXCLUDE_GLOB);
+    if (normalized === LEGACY_WORKSPACE_EXCLUDE_GLOB) {
+        return DEFAULT_WORKSPACE_EXCLUDE_GLOB;
+    }
+
+    return normalized;
+};
+
 const normalizeConfig = (value) => {
     const schedule = value && typeof value === 'object' ? value.schedule : null;
+    const workspace = value && typeof value === 'object' ? value.workspace : null;
     const windows = Array.isArray(schedule?.windows)
         ? schedule.windows.map(normalizeWindow).filter((windowConfig) => windowConfig.start && windowConfig.end)
         : cloneConfig(DEFAULT_CONFIG.schedule.windows);
@@ -30,6 +59,28 @@ const normalizeConfig = (value) => {
         rotateIntervalMs: normalizeNumber(value?.rotateIntervalMs, DEFAULT_CONFIG.rotateIntervalMs, 1, 1000),
         pollIntervalMs: normalizeNumber(value?.pollIntervalMs, DEFAULT_CONFIG.pollIntervalMs, 10, 5000),
         tolerancePx: normalizeNumber(value?.tolerancePx, DEFAULT_CONFIG.tolerancePx, 0, 100),
+        workspace: {
+            enabled: Boolean(workspace?.enabled),
+            scanMode: workspace?.scanMode === 'extension' ? 'extension' : 'popular',
+            preferredExtension: normalizeExtension(
+                workspace?.preferredExtension,
+                DEFAULT_CONFIG.workspace.preferredExtension
+            ),
+            openMode: workspace?.openMode === 'new-tab' ? 'new-tab' : 'same-tab',
+            idleMs: normalizeNumber(
+                workspace?.idleMs,
+                DEFAULT_CONFIG.workspace.idleMs,
+                10000,
+                60000
+            ),
+            advanceIntervalMs: normalizeNumber(
+                workspace?.advanceIntervalMs,
+                DEFAULT_CONFIG.workspace.advanceIntervalMs,
+                10000,
+                60000
+            ),
+            excludeGlob: normalizeExcludeGlob(workspace?.excludeGlob)
+        },
         schedule: {
             enabled: Boolean(schedule?.enabled),
             randomOffsetMinutes: normalizeNumber(

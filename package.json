@@ -1,7 +1,7 @@
 {
   "name": "code-viewer-bot",
   "displayName": "Code Viewer Bot",
-  "description": "A configurable mouse-rotation bot for VS Code with scheduled idle automation.",
+  "description": "A configurable idle automation bot for VS Code with mouse movement and workspace file browsing.",
   "version": "0.0.1",
   "publisher": "kalpak44",
   "license": "MIT",
@@ -29,36 +29,29 @@
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "automation",
+    "idle",
+    "workspace",
+    "files",
+    "productivity"
+  ],
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:extension.openConfig"
+    "onCommand:codeViewerBot.openConfiguration"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "extension.openConfig",
-        "title": "Open Configuration",
-        "category": "Code Viewer Bot"
+        "command": "codeViewerBot.openConfiguration",
+        "category": "Code Viewer Bot",
+        "title": "Configure Bot"
       }
     ],
-    "menus": {
-      "commandPalette": [
-        {
-          "command": "extension.openConfig",
-          "group": "navigation"
-        }
-      ],
-      "menubar/view": [
-        {
-          "command": "extension.openConfig",
-          "group": "9_code-viewer-bot"
-        }
-      ]
-    },
     "keybindings": [
       {
-        "command": "extension.openConfig",
+        "command": "codeViewerBot.openConfiguration",
         "key": "ctrl+alt+b",
         "mac": "cmd+alt+b"
       }
