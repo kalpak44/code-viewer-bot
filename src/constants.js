@@ -1,5 +1,7 @@
 const CONFIG_KEY = 'codeViewerBot.config';
 const PANEL_TYPE = 'codeViewerBot.configPanel';
+const LEGACY_WORKSPACE_EXCLUDE_GLOB = '**/{node_modules,.git,dist,out,coverage,.next,.nuxt,vendor}/**';
+const DEFAULT_WORKSPACE_EXCLUDE_GLOB = '{**/{node_modules,.git,.vscode,dist,out,coverage,.next,.nuxt,vendor}/**,**/*.code-workspace}';
 
 const DEFAULT_CONFIG = {
     idleMs: 2000,
@@ -8,6 +10,15 @@ const DEFAULT_CONFIG = {
     rotateIntervalMs: 10,
     pollIntervalMs: 50,
     tolerancePx: 3,
+    workspace: {
+        enabled: false,
+        scanMode: 'popular',
+        preferredExtension: '.js',
+        openMode: 'same-tab',
+        idleMs: 30000,
+        advanceIntervalMs: 30000,
+        excludeGlob: DEFAULT_WORKSPACE_EXCLUDE_GLOB
+    },
     schedule: {
         enabled: true,
         randomOffsetMinutes: 5,
@@ -21,5 +32,7 @@ const DEFAULT_CONFIG = {
 module.exports = {
     CONFIG_KEY,
     PANEL_TYPE,
+    LEGACY_WORKSPACE_EXCLUDE_GLOB,
+    DEFAULT_WORKSPACE_EXCLUDE_GLOB,
     DEFAULT_CONFIG
 };

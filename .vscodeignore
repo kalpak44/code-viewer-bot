@@ -15,3 +15,11 @@ vsc-extension-quickstart.md
 extension.js
 src/**
 esbuild.js
+scripts/**
+*.vsix
+npm-debug.log*
+node_modules/**
+!node_modules/robotjs/index.js
+!node_modules/robotjs/package.json
+!node_modules/robotjs/LICENSE.md
+!node_modules/robotjs/build/Release/robotjs.node

@@ -58,11 +58,30 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             gap: 12px;
         }
 
+        .workspace-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .workspace-field {
+            display: grid;
+            grid-template-columns: minmax(150px, 180px) minmax(0, 1fr);
+            gap: 10px 14px;
+            align-items: center;
+        }
+
+        .workspace-field-title {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+        }
+
         label {
             display: grid;
             gap: 6px;
             font-size: 12px;
             color: var(--vscode-descriptionForeground);
+            min-width: 0;
         }
 
         input, button {
@@ -70,12 +89,33 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
         }
 
         input[type="number"],
-        input[type="time"] {
+        input[type="time"],
+        input[type="text"] {
             padding: 8px 10px;
             border-radius: 8px;
             border: 1px solid var(--vscode-input-border, transparent);
             background: var(--vscode-input-background);
             color: var(--vscode-input-foreground);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .slider-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .slider-value {
+            min-width: 72px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            color: var(--vscode-foreground);
         }
 
         .toggle {
@@ -95,12 +135,6 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto;
             gap: 10px;
             align-items: end;
-        }
-
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
         }
 
         button {
@@ -134,6 +168,13 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             flex-wrap: wrap;
         }
 
+        .status-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         .pill {
             display: inline-flex;
             align-items: center;
@@ -153,6 +194,27 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             color: var(--vscode-descriptionForeground);
             font-size: 12px;
         }
+
+        .is-disabled {
+            opacity: 0.55;
+        }
+
+        select {
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--vscode-input-border, transparent);
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 640px) {
+            .workspace-field {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -163,32 +225,99 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
                     <h1>Code Viewer Bot</h1>
                     <p>Idle detector and scheduled mouse rotation powered by robotjs.</p>
                 </div>
-                <div id="status" class="pill">Stopped</div>
+                <div class="status-actions">
+                    <div id="status" class="pill">Stopped</div>
+                </div>
             </div>
         </div>
 
         <div class="card">
             <h2>Motion</h2>
             <div class="grid">
-                <label>Idle before start (ms)
-                    <input id="idleMs" type="number" min="250" step="50" />
+                <label>Idle before motion (sec)
+                    <div class="slider-row">
+                        <input id="idleMs" type="range" min="5" max="320" step="1" />
+                        <span id="idleMsValue" class="slider-value"></span>
+                    </div>
                 </label>
                 <label>Radius (px)
-                    <input id="radius" type="number" min="1" step="1" />
+                    <div class="slider-row">
+                        <input id="radius" type="range" min="1" max="2000" step="1" />
+                        <span id="radiusValue" class="slider-value"></span>
+                    </div>
                 </label>
                 <label>Speed (degrees)
-                    <input id="speed" type="number" min="1" step="1" />
+                    <div class="slider-row">
+                        <input id="speed" type="range" min="1" max="360" step="1" />
+                        <span id="speedValue" class="slider-value"></span>
+                    </div>
                 </label>
                 <label>Rotate interval (ms)
-                    <input id="rotateIntervalMs" type="number" min="1" step="1" />
+                    <div class="slider-row">
+                        <input id="rotateIntervalMs" type="range" min="1" max="1000" step="1" />
+                        <span id="rotateIntervalMsValue" class="slider-value"></span>
+                    </div>
                 </label>
                 <label>Poll interval (ms)
-                    <input id="pollIntervalMs" type="number" min="10" step="10" />
+                    <div class="slider-row">
+                        <input id="pollIntervalMs" type="range" min="10" max="5000" step="10" />
+                        <span id="pollIntervalMsValue" class="slider-value"></span>
+                    </div>
                 </label>
                 <label>Tolerance (px)
-                    <input id="tolerancePx" type="number" min="0" step="1" />
+                    <div class="slider-row">
+                        <input id="tolerancePx" type="range" min="0" max="100" step="1" />
+                        <span id="tolerancePxValue" class="slider-value"></span>
+                    </div>
                 </label>
             </div>
+        </div>
+
+        <div class="card">
+            <h2>Workspace</h2>
+            <label class="toggle">
+                <input id="workspaceEnabled" type="checkbox" />
+                <span>Open workspace files automatically while the bot is active</span>
+            </label>
+            <div class="workspace-grid">
+                <div class="workspace-field">
+                    <div class="workspace-field-title">File source</div>
+                    <select id="workspaceScanMode">
+                        <option value="popular">Use the most common extension</option>
+                        <option value="extension">Use a specific extension</option>
+                    </select>
+                </div>
+                <div id="workspacePreferredExtensionField" class="workspace-field">
+                    <div class="workspace-field-title">Specific extension</div>
+                    <input id="workspacePreferredExtension" type="text" placeholder=".js" />
+                </div>
+                <div class="workspace-field">
+                    <div class="workspace-field-title">Open behavior</div>
+                    <select id="workspaceOpenMode">
+                        <option value="same-tab">Reuse same tab</option>
+                        <option value="new-tab">Open new tab</option>
+                    </select>
+                </div>
+                <div class="workspace-field">
+                    <div class="workspace-field-title">Idle before file browsing</div>
+                    <div class="slider-row">
+                        <input id="workspaceIdleMs" type="range" min="10000" max="60000" step="1000" />
+                        <span id="workspaceIdleMsValue" class="slider-value"></span>
+                    </div>
+                </div>
+                <div class="workspace-field">
+                    <div class="workspace-field-title">Delay between file opens</div>
+                    <div class="slider-row">
+                        <input id="workspaceAdvanceIntervalMs" type="range" min="10000" max="60000" step="1000" />
+                        <span id="workspaceAdvanceIntervalMsValue" class="slider-value"></span>
+                    </div>
+                </div>
+                <div class="workspace-field">
+                    <div class="workspace-field-title">Exclude glob</div>
+                    <input id="workspaceExcludeGlob" type="text" />
+                </div>
+            </div>
+            <p id="workspaceStatus" class="muted" style="margin-top: 12px;">Workspace browsing disabled.</p>
         </div>
 
         <div class="card">
@@ -203,7 +332,7 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
                 </label>
             </div>
             <div class="windows" id="windows"></div>
-            <div class="actions" style="margin-top: 12px;">
+            <div style="margin-top: 12px;">
                 <button id="addWindow" class="ghost" type="button">Add window</button>
             </div>
         </div>
@@ -214,11 +343,6 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             <ul id="scheduleSummary"></ul>
         </div>
 
-        <div class="card">
-            <div class="actions">
-                <button id="save" class="primary" type="button">Save</button>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -227,6 +351,11 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
         const scheduleSummary = document.getElementById('scheduleSummary');
         const scheduleDate = document.getElementById('scheduleDate');
         const status = document.getElementById('status');
+        const workspaceStatus = document.getElementById('workspaceStatus');
+        const workspacePreferredExtensionField = document.getElementById('workspacePreferredExtensionField');
+        let saveTimer = null;
+        let configHydrated = false;
+        let awaitingConfigSync = false;
 
         const fields = {
             idleMs: document.getElementById('idleMs'),
@@ -235,9 +364,94 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             rotateIntervalMs: document.getElementById('rotateIntervalMs'),
             pollIntervalMs: document.getElementById('pollIntervalMs'),
             tolerancePx: document.getElementById('tolerancePx'),
+            workspaceEnabled: document.getElementById('workspaceEnabled'),
+            workspaceScanMode: document.getElementById('workspaceScanMode'),
+            workspacePreferredExtension: document.getElementById('workspacePreferredExtension'),
+            workspaceOpenMode: document.getElementById('workspaceOpenMode'),
+            workspaceIdleMs: document.getElementById('workspaceIdleMs'),
+            workspaceAdvanceIntervalMs: document.getElementById('workspaceAdvanceIntervalMs'),
+            workspaceExcludeGlob: document.getElementById('workspaceExcludeGlob'),
             scheduleEnabled: document.getElementById('scheduleEnabled'),
             randomOffsetMinutes: document.getElementById('randomOffsetMinutes')
         };
+
+        const sliderUnits = {
+            idleMs: 'sec',
+            radius: 'px',
+            speed: 'deg',
+            rotateIntervalMs: 'ms',
+            pollIntervalMs: 'ms',
+            tolerancePx: 'px',
+            workspaceIdleMs: 'sec',
+            workspaceAdvanceIntervalMs: 'sec'
+        };
+
+        function scheduleSave() {
+            if (saveTimer) {
+                clearTimeout(saveTimer);
+            }
+
+            saveTimer = setTimeout(() => {
+                awaitingConfigSync = true;
+                vscode.postMessage({ command: 'save', config: collectConfig() });
+            }, 250);
+        }
+
+        function updateSliderValue(id) {
+            const valueNode = document.getElementById(id + 'Value');
+            if (!valueNode) {
+                return;
+            }
+
+            const numericValue = Number(fields[id].value);
+            if (id === 'idleMs') {
+                const roundedValue = Math.round(numericValue * 1000) / 1000;
+                valueNode.textContent = roundedValue.toString() + ' ' + sliderUnits[id];
+                return;
+            }
+
+            if (id === 'workspaceIdleMs' || id === 'workspaceAdvanceIntervalMs') {
+                valueNode.textContent = (numericValue / 1000) + ' ' + sliderUnits[id];
+                return;
+            }
+
+            valueNode.textContent = numericValue + ' ' + sliderUnits[id];
+        }
+
+        function updateWorkspaceControls() {
+            const workspaceEnabled = fields.workspaceEnabled.checked;
+            const extensionMode = fields.workspaceScanMode.value === 'extension';
+
+            fields.workspaceScanMode.disabled = !workspaceEnabled;
+            fields.workspacePreferredExtension.disabled = !workspaceEnabled || !extensionMode;
+            fields.workspaceOpenMode.disabled = !workspaceEnabled;
+            fields.workspaceIdleMs.disabled = !workspaceEnabled;
+            fields.workspaceAdvanceIntervalMs.disabled = !workspaceEnabled;
+            fields.workspaceExcludeGlob.disabled = !workspaceEnabled;
+
+            workspacePreferredExtensionField.classList.toggle('is-disabled', !workspaceEnabled || !extensionMode);
+        }
+
+        Object.keys(sliderUnits).forEach((id) => {
+            fields[id].addEventListener('input', () => {
+                updateSliderValue(id);
+                scheduleSave();
+            });
+        });
+
+        fields.workspaceEnabled.addEventListener('change', () => {
+            updateWorkspaceControls();
+            scheduleSave();
+        });
+        fields.workspaceScanMode.addEventListener('change', () => {
+            updateWorkspaceControls();
+            scheduleSave();
+        });
+        fields.workspacePreferredExtension.addEventListener('input', scheduleSave);
+        fields.workspaceOpenMode.addEventListener('change', scheduleSave);
+        fields.workspaceExcludeGlob.addEventListener('input', scheduleSave);
+        fields.scheduleEnabled.addEventListener('change', scheduleSave);
+        fields.randomOffsetMinutes.addEventListener('input', scheduleSave);
 
         function createWindowRow(windowConfig) {
             const row = document.createElement('div');
@@ -254,8 +468,11 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
 
             row.querySelector('[data-role="start"]').value = windowConfig.start;
             row.querySelector('[data-role="end"]').value = windowConfig.end;
+            row.querySelector('[data-role="start"]').addEventListener('change', scheduleSave);
+            row.querySelector('[data-role="end"]').addEventListener('change', scheduleSave);
             row.querySelector('[data-role="remove"]').addEventListener('click', () => {
                 row.remove();
+                scheduleSave();
             });
 
             windowsRoot.appendChild(row);
@@ -275,12 +492,21 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
 
         function collectConfig() {
             return {
-                idleMs: Number(fields.idleMs.value),
+                idleMs: Math.round(Number(fields.idleMs.value) * 1000),
                 radius: Number(fields.radius.value),
                 speed: Number(fields.speed.value),
                 rotateIntervalMs: Number(fields.rotateIntervalMs.value),
                 pollIntervalMs: Number(fields.pollIntervalMs.value),
                 tolerancePx: Number(fields.tolerancePx.value),
+                workspace: {
+                    enabled: fields.workspaceEnabled.checked,
+                    scanMode: fields.workspaceScanMode.value,
+                    preferredExtension: fields.workspacePreferredExtension.value,
+                    openMode: fields.workspaceOpenMode.value,
+                    idleMs: Number(fields.workspaceIdleMs.value),
+                    advanceIntervalMs: Number(fields.workspaceAdvanceIntervalMs.value),
+                    excludeGlob: fields.workspaceExcludeGlob.value
+                },
                 schedule: {
                     enabled: fields.scheduleEnabled.checked,
                     randomOffsetMinutes: Number(fields.randomOffsetMinutes.value),
@@ -289,22 +515,45 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             };
         }
 
+        function applyConfig(config) {
+            fields.idleMs.value = String(config.idleMs / 1000);
+            fields.radius.value = config.radius;
+            fields.speed.value = config.speed;
+            fields.rotateIntervalMs.value = config.rotateIntervalMs;
+            fields.pollIntervalMs.value = config.pollIntervalMs;
+            fields.tolerancePx.value = config.tolerancePx;
+            Object.keys(sliderUnits).forEach(updateSliderValue);
+            fields.workspaceEnabled.checked = config.workspace.enabled;
+            fields.workspaceScanMode.value = config.workspace.scanMode;
+            fields.workspacePreferredExtension.value = config.workspace.preferredExtension;
+            fields.workspaceOpenMode.value = config.workspace.openMode;
+            fields.workspaceIdleMs.value = config.workspace.idleMs;
+            fields.workspaceAdvanceIntervalMs.value = config.workspace.advanceIntervalMs;
+            fields.workspaceExcludeGlob.value = config.workspace.excludeGlob;
+            updateSliderValue('workspaceIdleMs');
+            updateSliderValue('workspaceAdvanceIntervalMs');
+            updateWorkspaceControls();
+            fields.scheduleEnabled.checked = config.schedule.enabled;
+            fields.randomOffsetMinutes.value = config.schedule.randomOffsetMinutes;
+            renderWindows(config.schedule.windows);
+        }
+
         function applyState(state) {
-            if (state.config) {
-                fields.idleMs.value = state.config.idleMs;
-                fields.radius.value = state.config.radius;
-                fields.speed.value = state.config.speed;
-                fields.rotateIntervalMs.value = state.config.rotateIntervalMs;
-                fields.pollIntervalMs.value = state.config.pollIntervalMs;
-                fields.tolerancePx.value = state.config.tolerancePx;
-                fields.scheduleEnabled.checked = state.config.schedule.enabled;
-                fields.randomOffsetMinutes.value = state.config.schedule.randomOffsetMinutes;
-                renderWindows(state.config.schedule.windows);
+            if (state.config && (!configHydrated || awaitingConfigSync)) {
+                applyConfig(state.config);
+                configHydrated = true;
+                awaitingConfigSync = false;
             }
 
-            status.textContent = state.running
-                ? (state.rotating ? 'Running: rotating' : 'Running: waiting for idle')
-                : 'Stopped';
+            status.textContent = state.statusText || (state.running
+                ? (state.rotating ? 'Rotating' : 'Waiting for idle')
+                : 'Stopped');
+
+            if (state.workspaceStatusText) {
+                workspaceStatus.textContent = state.workspaceStatusText;
+            } else if (state.workspace) {
+                workspaceStatus.textContent = state.workspace.status;
+            }
 
             if (state.scheduleWindows !== undefined) {
                 scheduleSummary.innerHTML = '';
@@ -324,24 +573,15 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
 
         document.getElementById('addWindow').addEventListener('click', () => {
             createWindowRow({ start: '09:00', end: '17:00' });
-        });
-
-        document.getElementById('save').addEventListener('click', () => {
-            vscode.postMessage({ command: 'save', config: collectConfig() });
+            scheduleSave();
         });
 
         window.addEventListener('message', (event) => {
             const message = event.data;
             if (message.command === 'state') {
                 applyState(message.state);
-                vscode.setState(message.state);
             }
         });
-
-        const previousState = vscode.getState();
-        if (previousState) {
-            applyState(previousState);
-        }
 
         vscode.postMessage({ command: 'ready' });
     </script>
