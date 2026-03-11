@@ -1,0 +1,64 @@
+name: Publish VS Code Extension to Marketplace
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to publish (without leading v), for example 1.2.3"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-marketplace-${{ github.event.inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install @vscode/vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Download VSIX artifacts from GitHub release
+        run: |
+          mkdir -p dist
+          gh release download "v${{ inputs.version }}" \
+            --pattern "*.vsix" \
+            --dir dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show downloaded artifacts
+        run: |
+          ls -lah dist
+          test -n "$(find dist -maxdepth 1 -name '*.vsix' -print -quit)" || {
+            echo "No .vsix files were found in release v${{ inputs.version }}"
+            exit 1
+          }
+
+      - name: Publish VSIX files to Visual Studio Marketplace
+        run: |
+          shopt -s nullglob
+          files=(dist/*.vsix)
+
+          for file in "${files[@]}"; do
+            echo "Publishing $file"
+            vsce publish --packagePath "$file"
+          done
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
