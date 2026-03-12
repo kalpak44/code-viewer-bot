@@ -175,6 +175,29 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             flex-wrap: wrap;
         }
 
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .meta-box {
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 10px;
+            padding: 12px;
+            background: color-mix(in srgb, var(--vscode-editor-background) 82%, transparent);
+        }
+
+        .meta-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 6px;
+        }
+
         .pill {
             display: inline-flex;
             align-items: center;
@@ -229,6 +252,16 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
                     <div id="status" class="pill">Stopped</div>
                 </div>
             </div>
+            <div class="meta-grid">
+                <div class="meta-box">
+                    <span class="meta-label">This window</span>
+                    <div id="currentInstance">Waiting for runtime state...</div>
+                </div>
+                <div class="meta-box">
+                    <span class="meta-label">Active window</span>
+                    <div id="activeInstance">Waiting for runtime state...</div>
+                </div>
+            </div>
         </div>
 
         <div class="card">
@@ -271,6 +304,15 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
                     </div>
                 </label>
             </div>
+        </div>
+
+        <div class="card">
+            <h2>Instance Control</h2>
+            <label class="toggle">
+                <input id="singleInstance" type="checkbox" />
+                <span>Allow only one VS Code window to run the bot</span>
+            </label>
+            <p class="muted" style="margin-top: 12px;">When enabled, other windows stay in standby and show which window currently owns execution.</p>
         </div>
 
         <div class="card">
@@ -351,6 +393,8 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
         const scheduleSummary = document.getElementById('scheduleSummary');
         const scheduleDate = document.getElementById('scheduleDate');
         const status = document.getElementById('status');
+        const currentInstance = document.getElementById('currentInstance');
+        const activeInstance = document.getElementById('activeInstance');
         const workspaceStatus = document.getElementById('workspaceStatus');
         const workspacePreferredExtensionField = document.getElementById('workspacePreferredExtensionField');
         let saveTimer = null;
@@ -364,6 +408,7 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             rotateIntervalMs: document.getElementById('rotateIntervalMs'),
             pollIntervalMs: document.getElementById('pollIntervalMs'),
             tolerancePx: document.getElementById('tolerancePx'),
+            singleInstance: document.getElementById('singleInstance'),
             workspaceEnabled: document.getElementById('workspaceEnabled'),
             workspaceScanMode: document.getElementById('workspaceScanMode'),
             workspacePreferredExtension: document.getElementById('workspacePreferredExtension'),
@@ -443,6 +488,7 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             updateWorkspaceControls();
             scheduleSave();
         });
+        fields.singleInstance.addEventListener('change', scheduleSave);
         fields.workspaceScanMode.addEventListener('change', () => {
             updateWorkspaceControls();
             scheduleSave();
@@ -498,6 +544,9 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
                 rotateIntervalMs: Number(fields.rotateIntervalMs.value),
                 pollIntervalMs: Number(fields.pollIntervalMs.value),
                 tolerancePx: Number(fields.tolerancePx.value),
+                instanceControl: {
+                    singleInstance: fields.singleInstance.checked
+                },
                 workspace: {
                     enabled: fields.workspaceEnabled.checked,
                     scanMode: fields.workspaceScanMode.value,
@@ -522,6 +571,7 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             fields.rotateIntervalMs.value = config.rotateIntervalMs;
             fields.pollIntervalMs.value = config.pollIntervalMs;
             fields.tolerancePx.value = config.tolerancePx;
+            fields.singleInstance.checked = config.instanceControl.singleInstance;
             Object.keys(sliderUnits).forEach(updateSliderValue);
             fields.workspaceEnabled.checked = config.workspace.enabled;
             fields.workspaceScanMode.value = config.workspace.scanMode;
@@ -548,6 +598,17 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             status.textContent = state.statusText || (state.running
                 ? (state.rotating ? 'Rotating' : 'Waiting for idle')
                 : 'Stopped');
+
+            if (state.instance) {
+                currentInstance.textContent = state.instance.current?.label || 'Unknown window';
+                if (!state.instance.singleInstance) {
+                    activeInstance.textContent = 'Single-window coordination disabled';
+                } else if (state.instance.owner?.label) {
+                    activeInstance.textContent = state.instance.owner.label + (state.instance.isOwner ? ' (this window)' : '');
+                } else {
+                    activeInstance.textContent = 'No active owner yet';
+                }
+            }
 
             if (state.workspaceStatusText) {
                 workspaceStatus.textContent = state.workspaceStatusText;

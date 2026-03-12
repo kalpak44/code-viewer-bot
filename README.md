@@ -8,6 +8,8 @@ Code Viewer Bot is a Visual Studio Code extension that starts automatically afte
 
 It is designed for local desktop use and depends on `robotjs` for native mouse control.
 
+When multiple VS Code windows are open, the extension can coordinate so only one window owns execution at a time while the others remain in standby.
+
 ## What It Does
 
 When the extension is active, it evaluates three conditions:
@@ -48,6 +50,11 @@ Open the configuration panel in either of these ways:
 
 The configuration panel is split into three areas.
 
+It also shows two runtime identity fields at the top:
+
+- `This window`: the current VS Code window identity
+- `Active window`: the window that currently owns bot execution
+
 ### Motion
 
 These settings control cursor movement after idle:
@@ -83,6 +90,10 @@ These settings control when the bot is allowed to run:
 - schedule windows: one or more start/end time ranges for the day
 
 If schedule mode is enabled, the extension does nothing outside the generated daily schedule.
+
+### Instance Control
+
+- `Allow only one VS Code window to run the bot`: keeps one window active and places the others in standby
 
 ## Install From a Release
 
@@ -160,29 +171,23 @@ This is the fastest way to validate config changes and runtime behavior.
 
 ## Release Strategy
 
-The repository already includes a GitHub Actions release workflow in [`./.github/workflows/release.yml`](./.github/workflows/release.yml).
+The repository includes a GitHub Actions release workflow in [`./.github/workflows/release.yml`](./.github/workflows/release.yml).
 
 Current release process:
 
 1. Update the version in [`./package.json`](./package.json) and update [`./CHANGELOG.md`](./CHANGELOG.md).
-2. Commit the release changes.
-3. Create and push a semantic version tag such as:
-
-```sh
-git tag v0.0.2
-git push origin v0.0.2
-```
-
-4. GitHub Actions will:
+2. Commit the release changes and push them to the `main` branch.
+3. GitHub Actions will read the version directly from `package.json`, convert it to a release tag such as `v0.0.3`, then:
    - create or reuse the matching GitHub Release
    - build platform-specific VSIX files for Linux, macOS Apple Silicon, macOS Intel, and Windows
-   - upload those VSIX files to the release
+   - upload those VSIX files to that release
 
 Recommended release discipline:
 
 - keep `CHANGELOG.md` current for every release
-- test the packaged VSIX locally before pushing the tag
-- publish only tagged releases; avoid manual artifact drift
+- bump `package.json` before the `main` push that should produce a release
+- test the packaged VSIX locally before pushing the release commit
+- if you push more commits to `main` without changing the version, the workflow will reuse the same GitHub Release and replace its VSIX assets
 
 ## Runtime Structure
 
