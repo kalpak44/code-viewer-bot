@@ -31,7 +31,7 @@ Once those conditions are met, the extension can:
 Open the configuration panel in either of these ways:
 
 - Command Palette: `Code Viewer Bot: Configure Bot`
-- Shortcut on macOS: `Cmd+Alt+B`
+- Shortcut on macOS: `⌘⌥B`
 - Shortcut on Windows/Linux: `Ctrl+Alt+B`
 
 ### Step 1: Open the Command Palette
