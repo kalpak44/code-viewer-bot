@@ -1,10 +1,12 @@
 const vscode = require('vscode');
 const { createConfigStore } = require('./config/config-store');
+const { createInstanceCoordinator } = require('./services/instance-coordinator');
 const { createMouseBot } = require('./services/mouse-bot');
 const { createConfigPanel } = require('./ui/config-panel');
 
 let bot;
 let configPanel;
+let instanceCoordinator;
 
 const setBotContext = (runningState) => {
     vscode.commands.executeCommand('setContext', 'botRunning', runningState);
@@ -19,10 +21,21 @@ const activate = async (context) => {
     const configStore = createConfigStore(context);
     const logger = createLogger(outputChannel);
     const initialConfig = configStore.load();
+    instanceCoordinator = createInstanceCoordinator({
+        extensionContext: context,
+        logger,
+        initialConfig,
+        onChange: () => {
+            if (bot) {
+                bot.handleInstanceChange();
+            }
+        }
+    });
 
     bot = createMouseBot({
         initialConfig,
         logger,
+        instanceCoordinator,
         onStateChange: (state) => {
             setBotContext(state.running);
             if (configPanel) {
@@ -50,16 +63,25 @@ const activate = async (context) => {
         {
             dispose() {
                 bot.stop();
+                if (instanceCoordinator) {
+                    instanceCoordinator.stop().catch((error) => {
+                        outputChannel.appendLine(`Instance coordinator stop failed: ${error.message}`);
+                    });
+                }
             }
         }
     );
 
+    await instanceCoordinator.start();
     await bot.start();
 };
 
 const deactivate = () => {
     if (bot) {
         bot.stop();
+    }
+    if (instanceCoordinator) {
+        instanceCoordinator.stop().catch(() => {});
     }
 };
 
