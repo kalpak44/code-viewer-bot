@@ -59,6 +59,9 @@ const normalizeConfig = (value) => {
         rotateIntervalMs: normalizeNumber(value?.rotateIntervalMs, DEFAULT_CONFIG.rotateIntervalMs, 1, 1000),
         pollIntervalMs: normalizeNumber(value?.pollIntervalMs, DEFAULT_CONFIG.pollIntervalMs, 10, 5000),
         tolerancePx: normalizeNumber(value?.tolerancePx, DEFAULT_CONFIG.tolerancePx, 0, 100),
+        instanceControl: {
+            singleInstance: value?.instanceControl?.singleInstance !== false
+        },
         workspace: {
             enabled: Boolean(workspace?.enabled),
             scanMode: workspace?.scanMode === 'extension' ? 'extension' : 'popular',

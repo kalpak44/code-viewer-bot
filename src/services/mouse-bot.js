@@ -3,7 +3,7 @@ const { distance } = require('../utils/math');
 const { createScheduleService } = require('./schedule-service');
 const { createWorkspaceNavigator } = require('./workspace-navigator');
 
-const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
+const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateChange }) => {
     const scheduleService = createScheduleService({ logger });
     const workspaceNavigator = createWorkspaceNavigator({ logger });
 
@@ -41,10 +41,15 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
         const motionIdleRemainingMs = Math.max(0, config.idleMs - (now - lastUserMoveAt));
         const workspaceIdleRemainingMs = Math.max(0, config.workspace.idleMs - (now - lastUserMoveAt));
         const browseActive = browsing || browseStarting || Boolean(browseTimer);
+        const ownership = instanceCoordinator.getState();
 
         let statusText = 'Stopped';
         if (running) {
-            if (!allowedNow) {
+            if (!ownership.isOwner) {
+                statusText = ownership.singleInstance
+                    ? `Standby (${ownership.owner?.label || 'another window'} active)`
+                    : 'Active in this window';
+            } else if (!allowedNow) {
                 statusText = 'Outside schedule';
             } else if (browseActive) {
                 statusText = 'Browsing workspace';
@@ -59,7 +64,9 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
 
         let workspaceStatusText = workspace.status;
         if (config.workspace.enabled) {
-            if (!allowedNow) {
+            if (!ownership.isOwner && ownership.singleInstance) {
+                workspaceStatusText = `Workspace browsing paused: active window is ${ownership.owner?.label || 'another window'}.`;
+            } else if (!allowedNow) {
                 workspaceStatusText = 'Workspace browsing paused: outside schedule.';
             } else if (workspaceIdleRemainingMs > 0) {
                 workspaceStatusText = `Workspace browsing starts after ${formatRemainingSeconds(workspaceIdleRemainingMs)} of idle time.`;
@@ -73,6 +80,7 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
             running,
             rotating,
             statusText,
+            instance: ownership,
             scheduleDate: schedule.dateKey,
             scheduleWindows: schedule.windows,
             workspace,
@@ -146,6 +154,10 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
             browseTimer = null;
 
             if (!running || !config.workspace.enabled || !scheduleService.isWithinAllowedTime() || !isWorkspaceIdleLongEnough()) {
+                stopBrowsing();
+                return;
+            }
+            if (!instanceCoordinator.isOwner()) {
                 stopBrowsing();
                 return;
             }
@@ -269,7 +281,7 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
     const isWorkspaceIdleLongEnough = () => (Date.now() - lastUserMoveAt) >= config.workspace.idleMs;
 
     const startRotation = () => {
-        if (rotating || !running || !ensureRobotAvailable()) {
+        if (rotating || !running || !instanceCoordinator.isOwner() || !ensureRobotAvailable()) {
             return;
         }
 
@@ -301,6 +313,16 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
 
     const tick = () => {
         if (!running) {
+            return;
+        }
+
+        if (!instanceCoordinator.isOwner()) {
+            if (rotating) {
+                stopRotation(false);
+            }
+            if (browseTimer || browsing || browseStarting) {
+                stopBrowsing(false);
+            }
             return;
         }
 
@@ -397,6 +419,7 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
         config = nextConfig;
         scheduleService.setConfig(nextConfig);
         workspaceNavigator.setConfig(nextConfig);
+        await instanceCoordinator.updateConfig(nextConfig);
 
         if (!running) {
             emitState();
@@ -428,9 +451,10 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
         scheduleService.setConfig(config);
         scheduleService.ensureDailySchedule();
         workspaceNavigator.setConfig(config);
+        await instanceCoordinator.refreshOwnership();
 
         startPolling();
-        if (scheduleService.isWithinAllowedTime() && config.workspace.enabled && isWorkspaceIdleLongEnough()) {
+        if (instanceCoordinator.isOwner() && scheduleService.isWithinAllowedTime() && config.workspace.enabled && isWorkspaceIdleLongEnough()) {
             startBrowsing().catch((error) => {
                 logger(`Workspace browsing failed: ${error.message}`);
             });
@@ -457,6 +481,14 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
         }
     };
 
+    const handleInstanceChange = () => {
+        if (running && !instanceCoordinator.isOwner()) {
+            stopRotation(false);
+            stopBrowsing(false);
+        }
+        emitState();
+    };
+
     const handleWorkspaceChange = async () => {
         try {
             await refreshWorkspace();
@@ -471,6 +503,7 @@ const createMouseBot = ({ initialConfig, logger, onStateChange }) => {
         updateConfig,
         start,
         stop,
+        handleInstanceChange,
         handleWorkspaceChange
     };
 };
