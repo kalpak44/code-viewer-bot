@@ -266,6 +266,10 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
 
         <div class="card">
             <h2>Motion</h2>
+            <label class="toggle" style="margin-bottom: 12px;">
+                <input id="motionEnabled" type="checkbox" />
+                <span>Move the mouse automatically while the bot is active</span>
+            </label>
             <div class="grid">
                 <label>Idle before motion (sec)
                     <div class="slider-row">
@@ -402,6 +406,7 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
         let awaitingConfigSync = false;
 
         const fields = {
+            motionEnabled: document.getElementById('motionEnabled'),
             idleMs: document.getElementById('idleMs'),
             radius: document.getElementById('radius'),
             speed: document.getElementById('speed'),
@@ -477,6 +482,17 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             workspacePreferredExtensionField.classList.toggle('is-disabled', !workspaceEnabled || !extensionMode);
         }
 
+        function updateMotionControls() {
+            const motionEnabled = fields.motionEnabled.checked;
+
+            fields.idleMs.disabled = !motionEnabled;
+            fields.radius.disabled = !motionEnabled;
+            fields.speed.disabled = !motionEnabled;
+            fields.rotateIntervalMs.disabled = !motionEnabled;
+            fields.pollIntervalMs.disabled = !motionEnabled;
+            fields.tolerancePx.disabled = !motionEnabled;
+        }
+
         Object.keys(sliderUnits).forEach((id) => {
             fields[id].addEventListener('input', () => {
                 updateSliderValue(id);
@@ -484,6 +500,10 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
             });
         });
 
+        fields.motionEnabled.addEventListener('change', () => {
+            updateMotionControls();
+            scheduleSave();
+        });
         fields.workspaceEnabled.addEventListener('change', () => {
             updateWorkspaceControls();
             scheduleSave();
@@ -538,12 +558,15 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
 
         function collectConfig() {
             return {
-                idleMs: Math.round(Number(fields.idleMs.value) * 1000),
-                radius: Number(fields.radius.value),
-                speed: Number(fields.speed.value),
-                rotateIntervalMs: Number(fields.rotateIntervalMs.value),
-                pollIntervalMs: Number(fields.pollIntervalMs.value),
-                tolerancePx: Number(fields.tolerancePx.value),
+                motion: {
+                    enabled: fields.motionEnabled.checked,
+                    idleMs: Math.round(Number(fields.idleMs.value) * 1000),
+                    radius: Number(fields.radius.value),
+                    speed: Number(fields.speed.value),
+                    rotateIntervalMs: Number(fields.rotateIntervalMs.value),
+                    pollIntervalMs: Number(fields.pollIntervalMs.value),
+                    tolerancePx: Number(fields.tolerancePx.value)
+                },
                 instanceControl: {
                     singleInstance: fields.singleInstance.checked
                 },
@@ -565,14 +588,16 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
         }
 
         function applyConfig(config) {
-            fields.idleMs.value = String(config.idleMs / 1000);
-            fields.radius.value = config.radius;
-            fields.speed.value = config.speed;
-            fields.rotateIntervalMs.value = config.rotateIntervalMs;
-            fields.pollIntervalMs.value = config.pollIntervalMs;
-            fields.tolerancePx.value = config.tolerancePx;
+            fields.motionEnabled.checked = config.motion.enabled;
+            fields.idleMs.value = String(config.motion.idleMs / 1000);
+            fields.radius.value = config.motion.radius;
+            fields.speed.value = config.motion.speed;
+            fields.rotateIntervalMs.value = config.motion.rotateIntervalMs;
+            fields.pollIntervalMs.value = config.motion.pollIntervalMs;
+            fields.tolerancePx.value = config.motion.tolerancePx;
             fields.singleInstance.checked = config.instanceControl.singleInstance;
             Object.keys(sliderUnits).forEach(updateSliderValue);
+            updateMotionControls();
             fields.workspaceEnabled.checked = config.workspace.enabled;
             fields.workspaceScanMode.value = config.workspace.scanMode;
             fields.workspacePreferredExtension.value = config.workspace.preferredExtension;

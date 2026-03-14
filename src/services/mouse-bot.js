@@ -38,7 +38,7 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         const schedule = scheduleService.getSummary();
         const workspace = workspaceNavigator.getState();
         const allowedNow = scheduleService.isWithinAllowedTime(new Date(now));
-        const motionIdleRemainingMs = Math.max(0, config.idleMs - (now - lastUserMoveAt));
+        const motionIdleRemainingMs = Math.max(0, config.motion.idleMs - (now - lastUserMoveAt));
         const workspaceIdleRemainingMs = Math.max(0, config.workspace.idleMs - (now - lastUserMoveAt));
         const browseActive = browsing || browseStarting || Boolean(browseTimer);
         const ownership = instanceCoordinator.getState();
@@ -51,6 +51,8 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
                     : 'Active in this window';
             } else if (!allowedNow) {
                 statusText = 'Outside schedule';
+            } else if (!config.motion.enabled) {
+                statusText = browseActive ? 'Browsing workspace' : 'Motion disabled';
             } else if (browseActive) {
                 statusText = 'Browsing workspace';
             } else if (rotating) {
@@ -277,11 +279,17 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         emitState();
     };
 
-    const isIdleLongEnough = () => (Date.now() - lastUserMoveAt) >= config.idleMs;
+    const isIdleLongEnough = () => (Date.now() - lastUserMoveAt) >= config.motion.idleMs;
     const isWorkspaceIdleLongEnough = () => (Date.now() - lastUserMoveAt) >= config.workspace.idleMs;
 
     const startRotation = () => {
-        if (rotating || !running || !instanceCoordinator.isOwner() || !ensureRobotAvailable()) {
+        if (
+            rotating ||
+            !running ||
+            !config.motion.enabled ||
+            !instanceCoordinator.isOwner() ||
+            !ensureRobotAvailable()
+        ) {
             return;
         }
 
@@ -298,14 +306,14 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
                 return;
             }
 
-            const x = Math.round(centerX + (config.radius * Math.cos((angle * Math.PI) / 180)));
-            const y = Math.round(centerY + (config.radius * Math.sin((angle * Math.PI) / 180)));
+            const x = Math.round(centerX + (config.motion.radius * Math.cos((angle * Math.PI) / 180)));
+            const y = Math.round(centerY + (config.motion.radius * Math.sin((angle * Math.PI) / 180)));
 
             lastProgrammaticPos = { x, y };
             lastProgrammaticMoveAt = Date.now();
             robot.moveMouse(x, y);
-            angle = (angle + config.speed) % 360;
-        }, config.rotateIntervalMs);
+            angle = (angle + config.motion.speed) % 360;
+        }, config.motion.rotateIntervalMs);
 
         logger('Rotation started');
         emitState();
@@ -347,7 +355,7 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
             lastObservedPos = currentPos;
         }
 
-        const moved = distance(currentPos, lastObservedPos) > config.tolerancePx;
+        const moved = distance(currentPos, lastObservedPos) > config.motion.tolerancePx;
 
         if (!allowedNow && rotating) {
             stopRotation(false);
@@ -360,9 +368,9 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
             const currentDistanceToProgrammatic = lastProgrammaticPos
                 ? distance(currentPos, lastProgrammaticPos)
                 : Number.POSITIVE_INFINITY;
-            const isRecentProgrammaticMove = (Date.now() - lastProgrammaticMoveAt) <= Math.max(config.pollIntervalMs * 2, 100);
+            const isRecentProgrammaticMove = (Date.now() - lastProgrammaticMoveAt) <= Math.max(config.motion.pollIntervalMs * 2, 100);
             const isOwnMove = rotating && lastProgrammaticPos && (
-                currentDistanceToProgrammatic <= config.tolerancePx ||
+                currentDistanceToProgrammatic <= config.motion.tolerancePx ||
                 (isRecentProgrammaticMove && currentDistanceToProgrammatic < previousDistanceToProgrammatic)
             );
 
@@ -390,7 +398,7 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
                 }
             }
 
-            if (!rotating) {
+            if (config.motion.enabled && !rotating) {
                 startRotation();
                 return;
             }
@@ -412,7 +420,7 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         stopPolling();
         pollTimer = setInterval(() => {
             tick();
-        }, config.pollIntervalMs);
+        }, config.motion.pollIntervalMs);
     };
 
     const updateConfig = async (nextConfig) => {
