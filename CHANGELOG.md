@@ -4,7 +4,9 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.0.4]
+
+- Added a separate motion toggle so mouse movement can be enabled or disabled independently of workspace file rotation.
 
 ## [0.0.3]
 
