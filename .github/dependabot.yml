@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # Transitive dependency pulled in by @vscode/vsce.
+      # Dependabot cannot resolve yauzl >= 3.2.1 until vsce updates its declared range.
+      - dependency-name: "yauzl"
