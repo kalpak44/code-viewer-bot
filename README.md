@@ -59,6 +59,7 @@ It also shows two runtime identity fields at the top:
 
 These settings control cursor movement after idle:
 
+- `Move the mouse automatically while the bot is active`: enables or disables mouse motion without affecting workspace file rotation
 - `Idle before motion (sec)`: how long the mouse must remain idle before cursor movement can start
 - `Radius (px)`: the size of the circular movement
 - `Speed (degrees)`: how many degrees are advanced on each rotation tick

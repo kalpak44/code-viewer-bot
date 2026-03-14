@@ -48,17 +48,51 @@ const normalizeExcludeGlob = (value) => {
 const normalizeConfig = (value) => {
     const schedule = value && typeof value === 'object' ? value.schedule : null;
     const workspace = value && typeof value === 'object' ? value.workspace : null;
+    const motion = value && typeof value === 'object' ? value.motion : null;
     const windows = Array.isArray(schedule?.windows)
         ? schedule.windows.map(normalizeWindow).filter((windowConfig) => windowConfig.start && windowConfig.end)
         : cloneConfig(DEFAULT_CONFIG.schedule.windows);
 
     return {
-        idleMs: normalizeNumber(value?.idleMs, DEFAULT_CONFIG.idleMs, 250, 3600000),
-        radius: normalizeNumber(value?.radius, DEFAULT_CONFIG.radius, 1, 2000),
-        speed: normalizeNumber(value?.speed, DEFAULT_CONFIG.speed, 1, 360),
-        rotateIntervalMs: normalizeNumber(value?.rotateIntervalMs, DEFAULT_CONFIG.rotateIntervalMs, 1, 1000),
-        pollIntervalMs: normalizeNumber(value?.pollIntervalMs, DEFAULT_CONFIG.pollIntervalMs, 10, 5000),
-        tolerancePx: normalizeNumber(value?.tolerancePx, DEFAULT_CONFIG.tolerancePx, 0, 100),
+        motion: {
+            enabled: motion?.enabled !== false,
+            idleMs: normalizeNumber(
+                motion?.idleMs ?? value?.idleMs,
+                DEFAULT_CONFIG.motion.idleMs,
+                250,
+                3600000
+            ),
+            radius: normalizeNumber(
+                motion?.radius ?? value?.radius,
+                DEFAULT_CONFIG.motion.radius,
+                1,
+                2000
+            ),
+            speed: normalizeNumber(
+                motion?.speed ?? value?.speed,
+                DEFAULT_CONFIG.motion.speed,
+                1,
+                360
+            ),
+            rotateIntervalMs: normalizeNumber(
+                motion?.rotateIntervalMs ?? value?.rotateIntervalMs,
+                DEFAULT_CONFIG.motion.rotateIntervalMs,
+                1,
+                1000
+            ),
+            pollIntervalMs: normalizeNumber(
+                motion?.pollIntervalMs ?? value?.pollIntervalMs,
+                DEFAULT_CONFIG.motion.pollIntervalMs,
+                10,
+                5000
+            ),
+            tolerancePx: normalizeNumber(
+                motion?.tolerancePx ?? value?.tolerancePx,
+                DEFAULT_CONFIG.motion.tolerancePx,
+                0,
+                100
+            )
+        },
         instanceControl: {
             singleInstance: value?.instanceControl?.singleInstance !== false
         },

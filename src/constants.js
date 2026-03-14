@@ -5,12 +5,15 @@ const LEGACY_WORKSPACE_EXCLUDE_GLOB = '**/{node_modules,.git,dist,out,coverage,.
 const DEFAULT_WORKSPACE_EXCLUDE_GLOB = '{**/{node_modules,.git,.vscode,dist,out,coverage,.next,.nuxt,vendor}/**,**/*.code-workspace}';
 
 const DEFAULT_CONFIG = {
-    idleMs: 2000,
-    radius: 100,
-    speed: 3,
-    rotateIntervalMs: 10,
-    pollIntervalMs: 50,
-    tolerancePx: 3,
+    motion: {
+        enabled: true,
+        idleMs: 120000,
+        radius: 20,
+        speed: 1,
+        rotateIntervalMs: 10,
+        pollIntervalMs: 50,
+        tolerancePx: 3
+    },
     instanceControl: {
         singleInstance: true
     },
