@@ -18,11 +18,11 @@
     "vscode": "^1.61.0"
   },
   "dependencies": {
-    "robotjs": "^0.7.0"
+    "robotjs": "^0.7.1"
   },
   "devDependencies": {
-    "esbuild": "^0.27.4",
-    "@vscode/vsce": "^3.9.1"
+    "esbuild": "^0.28.0",
+    "@vscode/vsce": "^3.7.1"
   },
   "scripts": {
     "build": "node esbuild.js --production",
