@@ -21,7 +21,7 @@
     "robotjs": "^0.7.1"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "@vscode/vsce": "^3.7.1"
   },
   "scripts": {
