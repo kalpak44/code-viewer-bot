@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.1",
-    "@vscode/vsce": "^3.7.1"
+    "@vscode/vsce": "^3.9.2"
   },
   "scripts": {
     "build": "node esbuild.js --production",
