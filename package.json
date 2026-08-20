@@ -2,7 +2,7 @@
   "name": "code-viewer-bot",
   "displayName": "Code Viewer Bot",
   "description": "A configurable idle automation bot for VS Code with mouse movement and workspace file browsing.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "kalpakus",
   "pricing": "Free",
   "sponsor": {
