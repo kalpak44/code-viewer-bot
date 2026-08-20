@@ -12,7 +12,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: publish-marketplace-${{ github.event.inputs.version }}
@@ -25,6 +25,26 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Create or update release tag
+        shell: bash
+        run: |
+          TAG="v${{ inputs.version }}"
+
+          echo "Selected branch: ${{ github.ref_name }}"
+          echo "Commit: $(git rev-parse HEAD)"
+          echo "Tag: $TAG"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Create the tag locally or move an existing tag to HEAD.
+          git tag --force "$TAG" HEAD
+
+          # Create the remote tag or move it if it already exists.
+          git push origin "refs/tags/$TAG" --force
 
       - name: Set up Node.js 24
         uses: actions/setup-node@v6
