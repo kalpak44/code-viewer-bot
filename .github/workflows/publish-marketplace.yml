@@ -1,4 +1,4 @@
-name: Publish VS Code Extension to Marketplace
+name: Release and Publish VS Code Extension
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -13,39 +13,183 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 concurrency:
-  group: publish-marketplace-${{ github.event.inputs.version }}
+  group: release-marketplace-${{ inputs.version }}
   cancel-in-progress: false
 
 jobs:
-  publish:
+  prepare-release:
     runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release.outputs.release_tag }}
 
     steps:
-      - name: Check out code
+      - name: Check out selected branch
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Create or update release tag
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Prepare release tag
+        id: release
         shell: bash
         run: |
           TAG="v${{ inputs.version }}"
 
           echo "Selected branch: ${{ github.ref_name }}"
-          echo "Commit: $(git rev-parse HEAD)"
-          echo "Tag: $TAG"
+          echo "Selected commit: ${{ github.sha }}"
+          echo "Release tag: $TAG"
+
+          echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Validate package.json version
+        shell: bash
+        run: |
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          INPUT_VERSION="${{ inputs.version }}"
+
+          echo "package.json version: $PACKAGE_VERSION"
+          echo "requested version:    $INPUT_VERSION"
+
+          if [[ "$PACKAGE_VERSION" != "$INPUT_VERSION" ]]; then
+            echo "::error::package.json version ($PACKAGE_VERSION) does not match requested release version ($INPUT_VERSION)"
+            exit 1
+          fi
+
+      - name: Create or update Git tag
+        shell: bash
+        run: |
+          TAG="${{ steps.release.outputs.release_tag }}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Create the tag locally or move an existing tag to HEAD.
-          git tag --force "$TAG" HEAD
+          echo "Setting $TAG -> $(git rev-parse HEAD)"
 
-          # Create the remote tag or move it if it already exists.
+          git tag --force "$TAG" HEAD
           git push origin "refs/tags/$TAG" --force
 
+      - name: Create or update GitHub release
+        shell: bash
+        run: |
+          TAG="${{ steps.release.outputs.release_tag }}"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists."
+
+            gh release edit "$TAG" \
+              --target "${{ github.sha }}" \
+              --title "$TAG" \
+              --latest
+          else
+            echo "Creating release $TAG."
+
+            gh release create "$TAG" \
+              --target "${{ github.sha }}" \
+              --title "$TAG" \
+              --generate-notes \
+              --latest
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    needs: prepare-release
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            asset_name: code-viewer-bot-linux-x64.vsix
+
+          - os: macos-latest
+            target: darwin-arm64
+            asset_name: code-viewer-bot-darwin-arm64.vsix
+
+          - os: macos-15-intel
+            target: darwin-x64
+            asset_name: code-viewer-bot-darwin-x64.vsix
+
+          - os: windows-latest
+            target: win32-x64
+            asset_name: code-viewer-bot-win32-x64.vsix
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare-release.outputs.release_tag }}
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install @vscode/vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Install Linux native build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libx11-dev \
+            libxi-dev \
+            libxtst-dev \
+            libpng++-dev \
+            pkg-config
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          SKIP_ROBOTJS_REBUILD: "1"
+
+      - name: Build extension bundle
+        run: npm run build
+
+      - name: Rebuild robotjs
+        run: npm rebuild robotjs || true
+
+      - name: Package VSIX
+        run: vsce package --target ${{ matrix.target }} --out ${{ matrix.asset_name }}
+
+      - name: Upload release asset
+        shell: bash
+        run: |
+          gh release upload \
+            "${{ needs.prepare-release.outputs.release_tag }}" \
+            "${{ matrix.asset_name }}" \
+            --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload VSIX as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}
+          if-no-files-found: error
+
+  publish-marketplace:
+    needs:
+      - prepare-release
+      - build
+
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Set up Node.js 24
         uses: actions/setup-node@v6
         with:
@@ -54,18 +198,18 @@ jobs:
       - name: Install @vscode/vsce
         run: npm install -g @vscode/vsce
 
-      - name: Download VSIX artifacts from GitHub release
-        run: |
-          mkdir -p dist
-          gh release download "v${{ inputs.version }}" \
-            --pattern "code-viewer-bot-*.vsix" \
-            --dir dist
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download VSIX artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: code-viewer-bot-*.vsix
+          path: dist
+          merge-multiple: true
 
       - name: Verify expected VSIX artifacts
+        shell: bash
         run: |
           ls -lah dist
+
           expected=(
             "code-viewer-bot-linux-x64.vsix"
             "code-viewer-bot-darwin-arm64.vsix"
@@ -77,17 +221,18 @@ jobs:
 
           for file in "${expected[@]}"; do
             if [[ ! -f "dist/$file" ]]; then
-              echo "Missing expected artifact: $file"
+              echo "::error::Missing expected artifact: $file"
               missing=1
             fi
           done
 
           if [[ "$missing" -ne 0 ]]; then
-            echo "Release v${{ inputs.version }} does not contain the full set of platform VSIX files."
+            echo "::error::Release does not contain the full set of platform VSIX files."
             exit 1
           fi
 
       - name: Publish VSIX files to Visual Studio Marketplace
+        shell: bash
         run: |
           files=(
             "dist/code-viewer-bot-linux-x64.vsix"
@@ -98,7 +243,9 @@ jobs:
 
           for file in "${files[@]}"; do
             echo "Publishing $file"
-            vsce publish --packagePath "$file" --skip-duplicate
+            vsce publish \
+              --packagePath "$file" \
+              --skip-duplicate
           done
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
