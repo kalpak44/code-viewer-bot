@@ -1,4 +1,4 @@
-name: Release and Publish VS Code Extension
+name: Release VS Code Extension
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -7,21 +7,29 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version to publish (without leading v), for example 1.2.3"
+        description: "Release version (without leading v), for example 0.0.5"
         required: true
         type: string
+
+      publish_marketplace:
+        description: "Publish to Microsoft Visual Studio Marketplace"
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
   packages: write
 
 concurrency:
-  group: release-marketplace-${{ inputs.version }}
+  group: release-vscode-extension-${{ inputs.version }}
   cancel-in-progress: false
 
 jobs:
   prepare-release:
+    name: Prepare release
     runs-on: ubuntu-latest
+
     outputs:
       release_tag: ${{ steps.release.outputs.release_tag }}
 
@@ -35,63 +43,96 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: npm
 
-      - name: Prepare release tag
+      - name: Prepare release
         id: release
         shell: bash
         run: |
           TAG="v${{ inputs.version }}"
 
           echo "Selected branch: ${{ github.ref_name }}"
-          echo "Selected commit: ${{ github.sha }}"
+          echo "Selected commit: $(git rev-parse HEAD)"
+          echo "Release version: ${{ inputs.version }}"
           echo "Release tag: $TAG"
 
           echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Validate package.json version
+      - name: Update package version
         shell: bash
         run: |
-          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
-          INPUT_VERSION="${{ inputs.version }}"
+          CURRENT_VERSION="$(node -p "require('./package.json').version")"
+          RELEASE_VERSION="${{ inputs.version }}"
 
-          echo "package.json version: $PACKAGE_VERSION"
-          echo "requested version:    $INPUT_VERSION"
+          echo "Current package.json version: $CURRENT_VERSION"
+          echo "Requested release version:   $RELEASE_VERSION"
 
-          if [[ "$PACKAGE_VERSION" != "$INPUT_VERSION" ]]; then
-            echo "::error::package.json version ($PACKAGE_VERSION) does not match requested release version ($INPUT_VERSION)"
+          npm version "$RELEASE_VERSION" \
+            --no-git-tag-version \
+            --allow-same-version
+
+          FINAL_VERSION="$(node -p "require('./package.json').version")"
+
+          echo "Final package.json version: $FINAL_VERSION"
+
+          if [[ "$FINAL_VERSION" != "$RELEASE_VERSION" ]]; then
+            echo "::error::Failed to update package.json version."
             exit 1
           fi
 
-      - name: Create or update Git tag
+      - name: Commit release version
         shell: bash
         run: |
-          TAG="${{ steps.release.outputs.release_tag }}"
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          echo "Setting $TAG -> $(git rev-parse HEAD)"
+          if git diff --quiet; then
+            echo "Version files already up to date. Nothing to commit."
+          else
+            git add package.json
 
-          git tag --force "$TAG" HEAD
+            if [[ -f package-lock.json ]]; then
+              git add package-lock.json
+            fi
+
+            git commit -m "chore: release v${{ inputs.version }}"
+
+            echo "Pushing release commit to ${{ github.ref_name }}"
+            git push origin "HEAD:${{ github.ref_name }}"
+          fi
+
+      - name: Create or update release tag
+        shell: bash
+        run: |
+          TAG="${{ steps.release.outputs.release_tag }}"
+          COMMIT="$(git rev-parse HEAD)"
+
+          echo "Setting $TAG -> $COMMIT"
+
+          git tag --force "$TAG" "$COMMIT"
           git push origin "refs/tags/$TAG" --force
 
       - name: Create or update GitHub release
         shell: bash
         run: |
           TAG="${{ steps.release.outputs.release_tag }}"
+          COMMIT="$(git rev-parse HEAD)"
+
+          echo "Release tag: $TAG"
+          echo "Release commit: $COMMIT"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists."
+            echo "GitHub release $TAG already exists. Updating it."
 
             gh release edit "$TAG" \
-              --target "${{ github.sha }}" \
+              --target "$COMMIT" \
               --title "$TAG" \
               --latest
           else
-            echo "Creating release $TAG."
+            echo "Creating GitHub release $TAG."
 
             gh release create "$TAG" \
-              --target "${{ github.sha }}" \
+              --target "$COMMIT" \
               --title "$TAG" \
               --generate-notes \
               --latest
@@ -100,7 +141,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
-    needs: prepare-release
+    name: Build ${{ matrix.target }}
+
+    needs:
+      - prepare-release
 
     strategy:
       fail-fast: false
@@ -125,7 +169,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Check out release commit
+      - name: Check out release tag
         uses: actions/checkout@v5
         with:
           ref: ${{ needs.prepare-release.outputs.release_tag }}
@@ -141,6 +185,7 @@ jobs:
 
       - name: Install Linux native build dependencies
         if: runner.os == 'Linux'
+        shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -165,7 +210,7 @@ jobs:
       - name: Package VSIX
         run: vsce package --target ${{ matrix.target }} --out ${{ matrix.asset_name }}
 
-      - name: Upload release asset
+      - name: Upload VSIX to GitHub release
         shell: bash
         run: |
           gh release upload \
@@ -183,6 +228,10 @@ jobs:
           if-no-files-found: error
 
   publish-marketplace:
+    name: Publish to Microsoft Marketplace
+
+    if: ${{ inputs.publish_marketplace }}
+
     needs:
       - prepare-release
       - build
@@ -208,6 +257,7 @@ jobs:
       - name: Verify expected VSIX artifacts
         shell: bash
         run: |
+          echo "Downloaded artifacts:"
           ls -lah dist
 
           expected=(
@@ -243,6 +293,7 @@ jobs:
 
           for file in "${files[@]}"; do
             echo "Publishing $file"
+
             vsce publish \
               --packagePath "$file" \
               --skip-duplicate
