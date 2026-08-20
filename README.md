@@ -96,7 +96,11 @@ If schedule mode is enabled, the extension does nothing outside the generated da
 
 - `Allow only one VS Code window to run the bot`: keeps one window active and places the others in standby
 
-## Install From a Release
+## Install
+
+The extension is published to the Visual Studio Marketplace as `kalpakus.code-viewer-bot`, and each release also attaches platform-specific `.vsix` files to GitHub Releases.
+
+### Install From a Release
 
 Install a packaged `.vsix` from the GitHub Releases page:
 
@@ -145,13 +149,13 @@ Other supported package targets:
 Install the packaged extension into local VS Code:
 
 ```sh
-code --install-extension code-viewer-bot-darwin-arm64-0.0.1.vsix
+code --install-extension code-viewer-bot-darwin-arm64-0.0.4.vsix
 ```
 
 Replace an existing local install:
 
 ```sh
-code --install-extension code-viewer-bot-darwin-arm64-0.0.1.vsix --force
+code --install-extension code-viewer-bot-darwin-arm64-0.0.4.vsix --force
 ```
 
 Remove the extension from local VS Code:
@@ -170,25 +174,60 @@ For extension development without packaging:
 
 This is the fastest way to validate config changes and runtime behavior.
 
-## Release Strategy
+## Release Pipeline
 
-The repository includes a GitHub Actions release workflow in [`./.github/workflows/release.yml`](./.github/workflows/release.yml).
+Releasing is a two-stage pipeline built from two GitHub Actions workflows:
 
-Current release process:
+| Stage | Workflow | Trigger |
+| --- | --- | --- |
+| 1. Build and publish a GitHub Release | [`./.github/workflows/release.yml`](./.github/workflows/release.yml) | automatic, on every push to `main` |
+| 2. Publish to the Visual Studio Marketplace | [`./.github/workflows/publish-marketplace.yml`](./.github/workflows/publish-marketplace.yml) | manual, `workflow_dispatch` |
 
-1. Update the version in [`./package.json`](./package.json) and update [`./CHANGELOG.md`](./CHANGELOG.md).
-2. Commit the release changes and push them to the `main` branch.
-3. GitHub Actions will read the version directly from `package.json`, convert it to a release tag such as `v0.0.3`, then:
-   - create or reuse the matching GitHub Release
-   - build platform-specific VSIX files for Linux, macOS Apple Silicon, macOS Intel, and Windows
-   - upload those VSIX files to that release
+### Stage 1: GitHub Release (automatic)
 
-Recommended release discipline:
+1. Update the version in [`./package.json`](./package.json) and add the matching entry to [`./CHANGELOG.md`](./CHANGELOG.md).
+2. Commit and push to `main`.
+3. The `release.yml` workflow then:
+   - reads the version from `package.json` and derives the release tag, for example `v0.0.4`
+   - creates the GitHub Release for that tag if it does not exist yet, with generated notes, marked as latest
+   - builds platform-specific VSIX files in a matrix on Linux, macOS Apple Silicon (`macos-latest`), macOS Intel (`macos-15-intel`), and Windows
+   - uploads each VSIX to that release with `--clobber`, so re-runs replace the existing assets
+
+Produced release assets:
+
+- `code-viewer-bot-linux-x64.vsix`
+- `code-viewer-bot-darwin-arm64.vsix`
+- `code-viewer-bot-darwin-x64.vsix`
+- `code-viewer-bot-win32-x64.vsix`
+
+There is no separate git tag push step. The tag is created by the workflow from `package.json`, so if you push more commits to `main` without bumping the version, the same release is reused and its VSIX assets are overwritten.
+
+### Stage 2: Marketplace publish (manual)
+
+Publishing to the Marketplace never happens automatically. It is a deliberate, separate step:
+
+1. Confirm stage 1 finished and the GitHub Release contains all four VSIX files.
+2. Run the `Publish VS Code Extension to Marketplace` workflow manually from the Actions tab.
+3. Enter the `version` input without the leading `v`, for example `0.0.4`.
+4. The workflow downloads the `code-viewer-bot-*.vsix` assets from the `v<version>` release, verifies that all four expected platform files are present, and fails early if any are missing.
+5. Each VSIX is published with `vsce publish --packagePath ... --skip-duplicate`, so an already-published platform build is skipped instead of failing the run.
+
+The publish stage requires a `VSCE_PAT` repository secret with Marketplace publish rights for the `kalpakus` publisher. It publishes the artifacts built in stage 1 and never rebuilds them, so what reaches the Marketplace is byte-identical to what is attached to the GitHub Release.
+
+### Release discipline
 
 - keep `CHANGELOG.md` current for every release
 - bump `package.json` before the `main` push that should produce a release
 - test the packaged VSIX locally before pushing the release commit
-- if you push more commits to `main` without changing the version, the workflow will reuse the same GitHub Release and replace its VSIX assets
+- treat the GitHub Release as the source of truth: only publish to the Marketplace from a release whose assets are complete
+
+### Dependency updates
+
+Dependabot is configured in [`./.github/dependabot.yml`](./.github/dependabot.yml) to check npm dependencies weekly. The transitive `yauzl` dependency is ignored because it cannot be resolved until `@vscode/vsce` widens its declared range.
+
+## Security
+
+Vulnerability reports and the supported-version policy are documented in [`./SECURITY.md`](./SECURITY.md). Please do not open a public issue for a suspected vulnerability.
 
 ## Runtime Structure
 
