@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const os = require('os');
+const crypto = require('node:crypto');
 const vscode = require('vscode');
 const { INSTANCE_LOCK_FILENAME } = require('../constants');
 
@@ -11,7 +12,10 @@ const createInstanceCoordinator = ({ extensionContext, logger, initialConfig, on
     const workspaceName =
         vscode.workspace.name ||
         path.basename(vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || 'No Workspace');
-    const instanceId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    // randomUUID, not Math.random: this id is the lock-ownership token compared below to
+    // decide which window holds the lease, so two windows drawing the same value would
+    // both believe they own it.
+    const instanceId = crypto.randomUUID();
     const label = `${workspaceName} (${instanceId.slice(-4)})`;
     const lockFilePath = path.join(
         extensionContext.globalStorageUri.fsPath,
