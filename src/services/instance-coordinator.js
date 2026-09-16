@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const os = require('os');
+const crypto = require('node:crypto');
 const vscode = require('vscode');
 const { INSTANCE_LOCK_FILENAME } = require('../constants');
 
@@ -8,11 +9,18 @@ const HEARTBEAT_INTERVAL_MS = 4000;
 const LEASE_TIMEOUT_MS = 12000;
 
 const createInstanceCoordinator = ({ extensionContext, logger, initialConfig, onChange }) => {
-    const workspaceName = vscode.workspace.name
-        || path.basename(vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || 'No Workspace');
-    const instanceId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const workspaceName =
+        vscode.workspace.name ||
+        path.basename(vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || 'No Workspace');
+    // randomUUID, not Math.random: this id is the lock-ownership token compared below to
+    // decide which window holds the lease, so two windows drawing the same value would
+    // both believe they own it.
+    const instanceId = crypto.randomUUID();
     const label = `${workspaceName} (${instanceId.slice(-4)})`;
-    const lockFilePath = path.join(extensionContext.globalStorageUri.fsPath, INSTANCE_LOCK_FILENAME);
+    const lockFilePath = path.join(
+        extensionContext.globalStorageUri.fsPath,
+        INSTANCE_LOCK_FILENAME
+    );
 
     let config = initialConfig;
     let heartbeatTimer = null;
@@ -59,9 +67,11 @@ const createInstanceCoordinator = ({ extensionContext, logger, initialConfig, on
         isOwner = nextIsOwner;
 
         if (ownerChanged || ownershipChanged) {
-            logger(nextIsOwner
-                ? `Instance acquired active role: ${label}`
-                : `Instance in standby. Active owner: ${nextOwner?.label || 'none'}`);
+            logger(
+                nextIsOwner
+                    ? `Instance acquired active role: ${label}`
+                    : `Instance in standby. Active owner: ${nextOwner?.label || 'none'}`
+            );
             emitChange();
         }
     };
@@ -75,19 +85,22 @@ const createInstanceCoordinator = ({ extensionContext, logger, initialConfig, on
 
     const ensureOwnership = async () => {
         if (!config.instanceControl.singleInstance) {
-            setOwnerState({
-                instanceId,
-                label,
-                host: os.hostname(),
-                pid: process.pid,
-                updatedAt: Date.now(),
-                singleInstanceDisabled: true
-            }, true);
+            setOwnerState(
+                {
+                    instanceId,
+                    label,
+                    host: os.hostname(),
+                    pid: process.pid,
+                    updatedAt: Date.now(),
+                    singleInstanceDisabled: true
+                },
+                true
+            );
             return true;
         }
 
         const currentOwner = await readOwner();
-        const ownerExpired = currentOwner && (Date.now() - currentOwner.updatedAt) > LEASE_TIMEOUT_MS;
+        const ownerExpired = currentOwner && Date.now() - currentOwner.updatedAt > LEASE_TIMEOUT_MS;
 
         if (!currentOwner || ownerExpired || currentOwner.instanceId === instanceId) {
             await writeLease();
@@ -158,14 +171,17 @@ const createInstanceCoordinator = ({ extensionContext, logger, initialConfig, on
                 await refreshOwnership();
             } else {
                 await releaseOwnership();
-                setOwnerState({
-                    instanceId,
-                    label,
-                    host: os.hostname(),
-                    pid: process.pid,
-                    updatedAt: Date.now(),
-                    singleInstanceDisabled: true
-                }, true);
+                setOwnerState(
+                    {
+                        instanceId,
+                        label,
+                        host: os.hostname(),
+                        pid: process.pid,
+                        updatedAt: Date.now(),
+                        singleInstanceDisabled: true
+                    },
+                    true
+                );
             }
         }
     };

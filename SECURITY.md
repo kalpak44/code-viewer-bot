@@ -4,10 +4,10 @@
 
 Code Viewer Bot is maintained as a single moving line. Only the latest published version receives security fixes.
 
-| Version | Supported |
-| --- | --- |
-| Latest release (see [Releases](https://github.com/kalpak44/code-viewer-bot/releases)) | yes |
-| Any older release | no |
+| Version                                                                               | Supported |
+| ------------------------------------------------------------------------------------- | --------- |
+| Latest release (see [Releases](https://github.com/kalpak44/code-viewer-bot/releases)) | yes       |
+| Any older release                                                                     | no        |
 
 If you are affected by an issue, upgrade to the latest release first. Fixes are shipped as a new version through the normal release pipeline described in the [README](./README.md#release-pipeline): a version bump on `main` produces a GitHub Release with platform VSIX files, followed by a manual Marketplace publish.
 

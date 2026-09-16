@@ -34,22 +34,30 @@ const createConfigPanel = ({ extensionContext, onSave, getState }) => {
         );
 
         panel.webview.html = getConfigPanelHtml();
-        panel.onDidDispose(() => {
-            panel = null;
-        }, null, extensionContext.subscriptions);
+        panel.onDidDispose(
+            () => {
+                panel = null;
+            },
+            null,
+            extensionContext.subscriptions
+        );
 
-        panel.webview.onDidReceiveMessage(async (message) => {
-            switch (message.command) {
-                case 'ready':
-                    postState();
-                    return;
-                case 'save':
-                    await onSave(message.config);
-                    return;
-                default:
-                    return;
-            }
-        }, undefined, extensionContext.subscriptions);
+        panel.webview.onDidReceiveMessage(
+            async (message) => {
+                switch (message.command) {
+                    case 'ready':
+                        postState();
+                        return;
+                    case 'save':
+                        await onSave(message.config);
+                        return;
+                    default:
+                        return;
+                }
+            },
+            undefined,
+            extensionContext.subscriptions
+        );
 
         postState();
     };
