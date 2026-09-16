@@ -56,7 +56,9 @@ const activate = async (context) => {
     setBotContext(false);
     context.subscriptions.push(outputChannel);
     context.subscriptions.push(
-        vscode.commands.registerCommand('codeViewerBot.openConfiguration', () => configPanel.show()),
+        vscode.commands.registerCommand('codeViewerBot.openConfiguration', () =>
+            configPanel.show()
+        ),
         vscode.workspace.onDidChangeWorkspaceFolders(() => {
             bot.handleWorkspaceChange();
         }),
@@ -65,7 +67,9 @@ const activate = async (context) => {
                 bot.stop();
                 if (instanceCoordinator) {
                     instanceCoordinator.stop().catch((error) => {
-                        outputChannel.appendLine(`Instance coordinator stop failed: ${error.message}`);
+                        outputChannel.appendLine(
+                            `Instance coordinator stop failed: ${error.message}`
+                        );
                     });
                 }
             }

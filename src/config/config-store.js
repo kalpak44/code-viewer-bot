@@ -50,7 +50,9 @@ const normalizeConfig = (value) => {
     const workspace = value && typeof value === 'object' ? value.workspace : null;
     const motion = value && typeof value === 'object' ? value.motion : null;
     const windows = Array.isArray(schedule?.windows)
-        ? schedule.windows.map(normalizeWindow).filter((windowConfig) => windowConfig.start && windowConfig.end)
+        ? schedule.windows
+              .map(normalizeWindow)
+              .filter((windowConfig) => windowConfig.start && windowConfig.end)
         : cloneConfig(DEFAULT_CONFIG.schedule.windows);
 
     return {
