@@ -14,7 +14,9 @@ const createWorkspaceNavigator = ({ logger }) => {
     let openingFile = false;
     let lastOpenedFilePath = null;
 
-    const hasWorkspace = () => Array.isArray(vscode.workspace.workspaceFolders) && vscode.workspace.workspaceFolders.length > 0;
+    const hasWorkspace = () =>
+        Array.isArray(vscode.workspace.workspaceFolders) &&
+        vscode.workspace.workspaceFolders.length > 0;
 
     const getState = () => ({
         hasWorkspace: hasWorkspace(),
@@ -65,7 +67,7 @@ const createWorkspaceNavigator = ({ logger }) => {
                     }
                 }
 
-                return (binaryControlCount / bytesRead) < BINARY_CONTROL_THRESHOLD;
+                return binaryControlCount / bytesRead < BINARY_CONTROL_THRESHOLD;
             } finally {
                 await handle.close();
             }
@@ -103,15 +105,16 @@ const createWorkspaceNavigator = ({ logger }) => {
             groups.get(extension).push(uri);
         }
 
-        return Array.from(groups.entries())
-            .sort((left, right) => right[1].length - left[1].length);
+        return Array.from(groups.entries()).sort((left, right) => right[1].length - left[1].length);
     };
 
     const resolveFilesForScanMode = async (allFiles) => {
         const groupedFiles = groupFilesByExtension(allFiles);
 
         if (config.workspace.scanMode === 'extension') {
-            const matchingEntry = groupedFiles.find(([extension]) => extension === config.workspace.preferredExtension);
+            const matchingEntry = groupedFiles.find(
+                ([extension]) => extension === config.workspace.preferredExtension
+            );
             if (!matchingEntry) {
                 return {
                     targetExtension: config.workspace.preferredExtension,
@@ -156,7 +159,11 @@ const createWorkspaceNavigator = ({ logger }) => {
             return getState();
         }
 
-        const allFiles = await vscode.workspace.findFiles('**/*', config.workspace.excludeGlob, 5000);
+        const allFiles = await vscode.workspace.findFiles(
+            '**/*',
+            config.workspace.excludeGlob,
+            5000
+        );
         const resolvedFiles = await resolveFilesForScanMode(allFiles);
         const nextTargetExtension = resolvedFiles.targetExtension;
 
@@ -168,8 +175,9 @@ const createWorkspaceNavigator = ({ logger }) => {
         }
 
         targetExtension = nextTargetExtension;
-        const nextFiles = resolvedFiles.files
-            .sort((left, right) => left.fsPath.localeCompare(right.fsPath));
+        const nextFiles = resolvedFiles.files.sort((left, right) =>
+            left.fsPath.localeCompare(right.fsPath)
+        );
         const resumeAfterPath = lastOpenedFilePath || getActiveFilePath();
 
         files = nextFiles;
@@ -233,7 +241,7 @@ const createWorkspaceNavigator = ({ logger }) => {
         openingFile = true;
 
         try {
-            if (!await ensureFiles()) {
+            if (!(await ensureFiles())) {
                 return false;
             }
 
