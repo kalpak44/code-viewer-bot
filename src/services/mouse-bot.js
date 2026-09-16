@@ -31,7 +31,8 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
     scheduleService.setConfig(initialConfig);
     workspaceNavigator.setConfig(initialConfig);
 
-    const formatRemainingSeconds = (milliseconds) => `${Math.ceil(Math.max(0, milliseconds) / 1000)}s`;
+    const formatRemainingSeconds = (milliseconds) =>
+        `${Math.ceil(Math.max(0, milliseconds) / 1000)}s`;
 
     const getState = () => {
         const now = Date.now();
@@ -39,7 +40,10 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         const workspace = workspaceNavigator.getState();
         const allowedNow = scheduleService.isWithinAllowedTime(new Date(now));
         const motionIdleRemainingMs = Math.max(0, config.motion.idleMs - (now - lastUserMoveAt));
-        const workspaceIdleRemainingMs = Math.max(0, config.workspace.idleMs - (now - lastUserMoveAt));
+        const workspaceIdleRemainingMs = Math.max(
+            0,
+            config.workspace.idleMs - (now - lastUserMoveAt)
+        );
         const browseActive = browsing || browseStarting || Boolean(browseTimer);
         const ownership = instanceCoordinator.getState();
 
@@ -155,7 +159,12 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         browseTimer = setTimeout(() => {
             browseTimer = null;
 
-            if (!running || !config.workspace.enabled || !scheduleService.isWithinAllowedTime() || !isWorkspaceIdleLongEnough()) {
+            if (
+                !running ||
+                !config.workspace.enabled ||
+                !scheduleService.isWithinAllowedTime() ||
+                !isWorkspaceIdleLongEnough()
+            ) {
                 stopBrowsing();
                 return;
             }
@@ -164,7 +173,8 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
                 return;
             }
 
-            workspaceNavigator.openNextFile()
+            workspaceNavigator
+                .openNextFile()
                 .then((opened) => {
                     if (!opened) {
                         stopBrowsing();
@@ -186,9 +196,10 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
             return;
         }
 
-        const selectionMode = config.workspace.scanMode === 'extension'
-            ? 'manually selected'
-            : 'automatically selected';
+        const selectionMode =
+            config.workspace.scanMode === 'extension'
+                ? 'manually selected'
+                : 'automatically selected';
         const announcementKey = `${scanState.targetExtension}:${selectionMode}:${scanState.fileCount}`;
 
         if (lastWorkspaceAnnouncement === announcementKey) {
@@ -268,10 +279,7 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         stopBrowsing(false);
         await workspaceNavigator.scan();
 
-        if (
-            scheduleService.isWithinAllowedTime() &&
-            isWorkspaceIdleLongEnough()
-        ) {
+        if (scheduleService.isWithinAllowedTime() && isWorkspaceIdleLongEnough()) {
             await startBrowsing();
             return;
         }
@@ -279,8 +287,8 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         emitState();
     };
 
-    const isIdleLongEnough = () => (Date.now() - lastUserMoveAt) >= config.motion.idleMs;
-    const isWorkspaceIdleLongEnough = () => (Date.now() - lastUserMoveAt) >= config.workspace.idleMs;
+    const isIdleLongEnough = () => Date.now() - lastUserMoveAt >= config.motion.idleMs;
+    const isWorkspaceIdleLongEnough = () => Date.now() - lastUserMoveAt >= config.workspace.idleMs;
 
     const startRotation = () => {
         if (
@@ -306,8 +314,12 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
                 return;
             }
 
-            const x = Math.round(centerX + (config.motion.radius * Math.cos((angle * Math.PI) / 180)));
-            const y = Math.round(centerY + (config.motion.radius * Math.sin((angle * Math.PI) / 180)));
+            const x = Math.round(
+                centerX + config.motion.radius * Math.cos((angle * Math.PI) / 180)
+            );
+            const y = Math.round(
+                centerY + config.motion.radius * Math.sin((angle * Math.PI) / 180)
+            );
 
             lastProgrammaticPos = { x, y };
             lastProgrammaticMoveAt = Date.now();
@@ -368,11 +380,15 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
             const currentDistanceToProgrammatic = lastProgrammaticPos
                 ? distance(currentPos, lastProgrammaticPos)
                 : Number.POSITIVE_INFINITY;
-            const isRecentProgrammaticMove = (Date.now() - lastProgrammaticMoveAt) <= Math.max(config.motion.pollIntervalMs * 2, 100);
-            const isOwnMove = rotating && lastProgrammaticPos && (
-                currentDistanceToProgrammatic <= config.motion.tolerancePx ||
-                (isRecentProgrammaticMove && currentDistanceToProgrammatic < previousDistanceToProgrammatic)
-            );
+            const isRecentProgrammaticMove =
+                Date.now() - lastProgrammaticMoveAt <=
+                Math.max(config.motion.pollIntervalMs * 2, 100);
+            const isOwnMove =
+                rotating &&
+                lastProgrammaticPos &&
+                (currentDistanceToProgrammatic <= config.motion.tolerancePx ||
+                    (isRecentProgrammaticMove &&
+                        currentDistanceToProgrammatic < previousDistanceToProgrammatic));
 
             if (browseTimer && !isOwnMove) {
                 stopBrowsing(false);
@@ -462,7 +478,12 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         await instanceCoordinator.refreshOwnership();
 
         startPolling();
-        if (instanceCoordinator.isOwner() && scheduleService.isWithinAllowedTime() && config.workspace.enabled && isWorkspaceIdleLongEnough()) {
+        if (
+            instanceCoordinator.isOwner() &&
+            scheduleService.isWithinAllowedTime() &&
+            config.workspace.enabled &&
+            isWorkspaceIdleLongEnough()
+        ) {
             startBrowsing().catch((error) => {
                 logger(`Workspace browsing failed: ${error.message}`);
             });

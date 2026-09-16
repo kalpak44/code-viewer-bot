@@ -1,8 +1,10 @@
 const CONFIG_KEY = 'codeViewerBot.config';
 const PANEL_TYPE = 'codeViewerBot.configPanel';
 const INSTANCE_LOCK_FILENAME = 'instance-lock.json';
-const LEGACY_WORKSPACE_EXCLUDE_GLOB = '**/{node_modules,.git,dist,out,coverage,.next,.nuxt,vendor}/**';
-const DEFAULT_WORKSPACE_EXCLUDE_GLOB = '{**/{node_modules,.git,.vscode,dist,out,coverage,.next,.nuxt,vendor}/**,**/*.code-workspace}';
+const LEGACY_WORKSPACE_EXCLUDE_GLOB =
+    '**/{node_modules,.git,dist,out,coverage,.next,.nuxt,vendor}/**';
+const DEFAULT_WORKSPACE_EXCLUDE_GLOB =
+    '{**/{node_modules,.git,.vscode,dist,out,coverage,.next,.nuxt,vendor}/**,**/*.code-workspace}';
 
 const DEFAULT_CONFIG = {
     motion: {

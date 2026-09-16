@@ -22,8 +22,8 @@ Once those conditions are met, the extension can:
 
 - move the cursor in a circular pattern
 - browse files from the workspace using either:
-  - the most common text-file extension in the workspace
-  - a manually selected extension such as `.js` or `.ts`
+    - the most common text-file extension in the workspace
+    - a manually selected extension such as `.js` or `.ts`
 - reuse the same editor tab or open files in new tabs
 
 ## Open the Configuration
@@ -73,11 +73,11 @@ These settings control automatic file browsing:
 
 - `Open workspace files automatically while the bot is active`: enables workspace file rotation
 - `File source`:
-  - `Use the most common extension`: automatically chooses the most common text-file extension in the workspace
-  - `Use a specific extension`: rotates only files matching the chosen extension
+    - `Use the most common extension`: automatically chooses the most common text-file extension in the workspace
+    - `Use a specific extension`: rotates only files matching the chosen extension
 - `Open behavior`:
-  - `Reuse same tab`: closes the current active editor before opening the next file
-  - `Open new tab`: keeps opening files in additional editor tabs
+    - `Reuse same tab`: closes the current active editor before opening the next file
+    - `Open new tab`: keeps opening files in additional editor tabs
 - `Idle before file browsing`: separate idle threshold before file browsing starts
 - `Delay between file opens`: wait time between file transitions
 - `Exclude glob`: paths to ignore while scanning the workspace
@@ -178,20 +178,20 @@ This is the fastest way to validate config changes and runtime behavior.
 
 Releasing is a two-stage pipeline built from two GitHub Actions workflows:
 
-| Stage | Workflow | Trigger |
-| --- | --- | --- |
-| 1. Build and publish a GitHub Release | [`./.github/workflows/release.yml`](./.github/workflows/release.yml) | automatic, on every push to `main` |
-| 2. Publish to the Visual Studio Marketplace | [`./.github/workflows/publish-marketplace.yml`](./.github/workflows/publish-marketplace.yml) | manual, `workflow_dispatch` |
+| Stage                                       | Workflow                                                                                     | Trigger                            |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------- |
+| 1. Build and publish a GitHub Release       | [`./.github/workflows/release.yml`](./.github/workflows/release.yml)                         | automatic, on every push to `main` |
+| 2. Publish to the Visual Studio Marketplace | [`./.github/workflows/publish-marketplace.yml`](./.github/workflows/publish-marketplace.yml) | manual, `workflow_dispatch`        |
 
 ### Stage 1: GitHub Release (automatic)
 
 1. Update the version in [`./package.json`](./package.json) and add the matching entry to [`./CHANGELOG.md`](./CHANGELOG.md).
 2. Commit and push to `main`.
 3. The `release.yml` workflow then:
-   - reads the version from `package.json` and derives the release tag, for example `v0.0.4`
-   - creates the GitHub Release for that tag if it does not exist yet, with generated notes, marked as latest
-   - builds platform-specific VSIX files in a matrix on Linux, macOS Apple Silicon (`macos-latest`), macOS Intel (`macos-15-intel`), and Windows
-   - uploads each VSIX to that release with `--clobber`, so re-runs replace the existing assets
+    - reads the version from `package.json` and derives the release tag, for example `v0.0.4`
+    - creates the GitHub Release for that tag if it does not exist yet, with generated notes, marked as latest
+    - builds platform-specific VSIX files in a matrix on Linux, macOS Apple Silicon (`macos-latest`), macOS Intel (`macos-15-intel`), and Windows
+    - uploads each VSIX to that release with `--clobber`, so re-runs replace the existing assets
 
 Produced release assets:
 

@@ -26,10 +26,10 @@ const createScheduleService = ({ logger }) => {
             let end = endBase + randomInt(-offsetRange, offsetRange);
 
             start = Math.max(0, start);
-            end = Math.min((23 * 60) + 59, end);
+            end = Math.min(23 * 60 + 59, end);
 
             if (end <= start) {
-                end = Math.min(start + 1, (23 * 60) + 59);
+                end = Math.min(start + 1, 23 * 60 + 59);
             }
 
             return {
@@ -72,11 +72,12 @@ const createScheduleService = ({ logger }) => {
 
         ensureDailySchedule(now);
 
-        const currentMinutes = (now.getHours() * 60) + now.getMinutes();
-        return dailySchedule.windows.some((windowConfig) => (
-            currentMinutes >= windowConfig.startMinutes &&
-            currentMinutes < windowConfig.endMinutes
-        ));
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        return dailySchedule.windows.some(
+            (windowConfig) =>
+                currentMinutes >= windowConfig.startMinutes &&
+                currentMinutes < windowConfig.endMinutes
+        );
     };
 
     const getSummary = () => {
