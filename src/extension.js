@@ -54,8 +54,8 @@ const activate = async (context) => {
     });
 
     setBotContext(false);
-    context.subscriptions.push(outputChannel);
     context.subscriptions.push(
+        outputChannel,
         vscode.commands.registerCommand('codeViewerBot.openConfiguration', () =>
             configPanel.show()
         ),

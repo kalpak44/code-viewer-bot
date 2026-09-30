@@ -175,9 +175,8 @@ const createWorkspaceNavigator = ({ logger }) => {
         }
 
         targetExtension = nextTargetExtension;
-        const nextFiles = resolvedFiles.files.sort((left, right) =>
-            left.fsPath.localeCompare(right.fsPath)
-        );
+        resolvedFiles.files.sort((left, right) => left.fsPath.localeCompare(right.fsPath));
+        const nextFiles = resolvedFiles.files;
         const resumeAfterPath = lastOpenedFilePath || getActiveFilePath();
 
         files = nextFiles;

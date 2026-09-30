@@ -3,7 +3,7 @@ const crypto = require('node:crypto');
 const distance = (a, b) => {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return Math.hypot(dx, dy);
 };
 
 // crypto, not Math.random: the schedule offset is drawn from it and a predictable

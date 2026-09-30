@@ -1,6 +1,6 @@
-const fs = require('fs/promises');
-const path = require('path');
-const os = require('os');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const os = require('node:os');
 const crypto = require('node:crypto');
 const vscode = require('vscode');
 const { INSTANCE_LOCK_FILENAME } = require('../constants');
@@ -149,7 +149,7 @@ const createInstanceCoordinator = ({ extensionContext, logger, initialConfig, on
         }
 
         heartbeatTimer = setInterval(() => {
-            refreshOwnership();
+            void refreshOwnership();
         }, HEARTBEAT_INTERVAL_MS);
     };
 
