@@ -34,6 +34,63 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
     const formatRemainingSeconds = (milliseconds) =>
         `${Math.ceil(Math.max(0, milliseconds) / 1000)}s`;
 
+    const describeMotionStatus = ({
+        ownership,
+        allowedNow,
+        browseActive,
+        motionIdleRemainingMs
+    }) => {
+        if (!running) {
+            return 'Stopped';
+        }
+        if (!ownership.isOwner) {
+            return ownership.singleInstance
+                ? `Standby (${ownership.owner?.label || 'another window'} active)`
+                : 'Active in this window';
+        }
+        if (!allowedNow) {
+            return 'Outside schedule';
+        }
+        if (!config.motion.enabled) {
+            return browseActive ? 'Browsing workspace' : 'Motion disabled';
+        }
+        if (browseActive) {
+            return 'Browsing workspace';
+        }
+        if (rotating) {
+            return 'Rotating';
+        }
+        if (motionIdleRemainingMs > 0) {
+            return `Waiting ${formatRemainingSeconds(motionIdleRemainingMs)} for motion`;
+        }
+        return 'Ready';
+    };
+
+    const describeWorkspaceStatus = ({
+        workspaceStatus,
+        ownership,
+        allowedNow,
+        browseActive,
+        workspaceIdleRemainingMs
+    }) => {
+        if (!config.workspace.enabled) {
+            return workspaceStatus;
+        }
+        if (!ownership.isOwner && ownership.singleInstance) {
+            return `Workspace browsing paused: active window is ${ownership.owner?.label || 'another window'}.`;
+        }
+        if (!allowedNow) {
+            return 'Workspace browsing paused: outside schedule.';
+        }
+        if (workspaceIdleRemainingMs > 0) {
+            return `Workspace browsing starts after ${formatRemainingSeconds(workspaceIdleRemainingMs)} of idle time.`;
+        }
+        if (browseActive) {
+            return `${workspaceStatus} Next file opens after the configured delay.`;
+        }
+        return workspaceStatus;
+    };
+
     const getState = () => {
         const now = Date.now();
         const schedule = scheduleService.getSummary();
@@ -47,50 +104,27 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         const browseActive = browsing || browseStarting || Boolean(browseTimer);
         const ownership = instanceCoordinator.getState();
 
-        let statusText = 'Stopped';
-        if (running) {
-            if (!ownership.isOwner) {
-                statusText = ownership.singleInstance
-                    ? `Standby (${ownership.owner?.label || 'another window'} active)`
-                    : 'Active in this window';
-            } else if (!allowedNow) {
-                statusText = 'Outside schedule';
-            } else if (!config.motion.enabled) {
-                statusText = browseActive ? 'Browsing workspace' : 'Motion disabled';
-            } else if (browseActive) {
-                statusText = 'Browsing workspace';
-            } else if (rotating) {
-                statusText = 'Rotating';
-            } else if (motionIdleRemainingMs > 0) {
-                statusText = `Waiting ${formatRemainingSeconds(motionIdleRemainingMs)} for motion`;
-            } else {
-                statusText = 'Ready';
-            }
-        }
-
-        let workspaceStatusText = workspace.status;
-        if (config.workspace.enabled) {
-            if (!ownership.isOwner && ownership.singleInstance) {
-                workspaceStatusText = `Workspace browsing paused: active window is ${ownership.owner?.label || 'another window'}.`;
-            } else if (!allowedNow) {
-                workspaceStatusText = 'Workspace browsing paused: outside schedule.';
-            } else if (workspaceIdleRemainingMs > 0) {
-                workspaceStatusText = `Workspace browsing starts after ${formatRemainingSeconds(workspaceIdleRemainingMs)} of idle time.`;
-            } else if (browseActive) {
-                workspaceStatusText = `${workspace.status} Next file opens after the configured delay.`;
-            }
-        }
-
         return {
             config,
             running,
             rotating,
-            statusText,
+            statusText: describeMotionStatus({
+                ownership,
+                allowedNow,
+                browseActive,
+                motionIdleRemainingMs
+            }),
             instance: ownership,
             scheduleDate: schedule.dateKey,
             scheduleWindows: schedule.windows,
             workspace,
-            workspaceStatusText
+            workspaceStatusText: describeWorkspaceStatus({
+                workspaceStatus: workspace.status,
+                ownership,
+                allowedNow,
+                browseActive,
+                workspaceIdleRemainingMs
+            })
         };
     };
 
@@ -331,18 +365,72 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         emitState();
     };
 
+    const stopActivitiesForLostOwnership = () => {
+        if (rotating) {
+            stopRotation(false);
+        }
+        if (browseTimer || browsing || browseStarting) {
+            stopBrowsing(false);
+        }
+    };
+
+    const handleDetectedMovement = (currentPos) => {
+        const previousDistanceToProgrammatic = lastProgrammaticPos
+            ? distance(lastObservedPos, lastProgrammaticPos)
+            : Number.POSITIVE_INFINITY;
+        const currentDistanceToProgrammatic = lastProgrammaticPos
+            ? distance(currentPos, lastProgrammaticPos)
+            : Number.POSITIVE_INFINITY;
+        const isRecentProgrammaticMove =
+            Date.now() - lastProgrammaticMoveAt <= Math.max(config.motion.pollIntervalMs * 2, 100);
+        const isOwnMove =
+            rotating &&
+            lastProgrammaticPos &&
+            (currentDistanceToProgrammatic <= config.motion.tolerancePx ||
+                (isRecentProgrammaticMove &&
+                    currentDistanceToProgrammatic < previousDistanceToProgrammatic));
+
+        if (browseTimer && !isOwnMove) {
+            stopBrowsing(false);
+        }
+        if (rotating) {
+            if (!isOwnMove) {
+                stopRotation(false);
+                lastUserMoveAt = Date.now();
+            }
+        } else {
+            lastUserMoveAt = Date.now();
+        }
+
+        lastObservedPos = currentPos;
+    };
+
+    const maybeStartActivities = (allowedNow) => {
+        if (!allowedNow || !isIdleLongEnough()) {
+            return false;
+        }
+
+        if (config.workspace.enabled && !browsing && isWorkspaceIdleLongEnough()) {
+            startBrowsing().catch((error) => {
+                logger(`Workspace browsing failed: ${error.message}`);
+            });
+        }
+
+        if (config.motion.enabled && !rotating) {
+            startRotation();
+            return true;
+        }
+
+        return false;
+    };
+
     const tick = () => {
         if (!running) {
             return;
         }
 
         if (!instanceCoordinator.isOwner()) {
-            if (rotating) {
-                stopRotation(false);
-            }
-            if (browseTimer || browsing || browseStarting) {
-                stopBrowsing(false);
-            }
+            stopActivitiesForLostOwnership();
             return;
         }
 
@@ -374,50 +462,11 @@ const createMouseBot = ({ initialConfig, logger, instanceCoordinator, onStateCha
         }
 
         if (moved) {
-            const previousDistanceToProgrammatic = lastProgrammaticPos
-                ? distance(lastObservedPos, lastProgrammaticPos)
-                : Number.POSITIVE_INFINITY;
-            const currentDistanceToProgrammatic = lastProgrammaticPos
-                ? distance(currentPos, lastProgrammaticPos)
-                : Number.POSITIVE_INFINITY;
-            const isRecentProgrammaticMove =
-                Date.now() - lastProgrammaticMoveAt <=
-                Math.max(config.motion.pollIntervalMs * 2, 100);
-            const isOwnMove =
-                rotating &&
-                lastProgrammaticPos &&
-                (currentDistanceToProgrammatic <= config.motion.tolerancePx ||
-                    (isRecentProgrammaticMove &&
-                        currentDistanceToProgrammatic < previousDistanceToProgrammatic));
-
-            if (browseTimer && !isOwnMove) {
-                stopBrowsing(false);
-            }
-            if (rotating) {
-                if (!isOwnMove) {
-                    stopRotation(false);
-                    lastUserMoveAt = Date.now();
-                }
-            } else {
-                lastUserMoveAt = Date.now();
-            }
-
-            lastObservedPos = currentPos;
+            handleDetectedMovement(currentPos);
         }
 
-        if (allowedNow && isIdleLongEnough()) {
-            if (config.workspace.enabled && !browsing) {
-                if (isWorkspaceIdleLongEnough()) {
-                    startBrowsing().catch((error) => {
-                        logger(`Workspace browsing failed: ${error.message}`);
-                    });
-                }
-            }
-
-            if (config.motion.enabled && !rotating) {
-                startRotation();
-                return;
-            }
+        if (maybeStartActivities(allowedNow)) {
+            return;
         }
 
         if (scheduleChanged) {
