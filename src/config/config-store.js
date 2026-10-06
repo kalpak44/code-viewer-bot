@@ -5,7 +5,7 @@ const {
     DEFAULT_WORKSPACE_EXCLUDE_GLOB
 } = require('../constants');
 
-const cloneConfig = (config) => JSON.parse(JSON.stringify(config));
+const cloneConfig = (config) => structuredClone(config);
 
 const normalizeWindow = (windowConfig) => {
     const start = typeof windowConfig?.start === 'string' ? windowConfig.start : '09:00';
