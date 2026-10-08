@@ -142,9 +142,11 @@ npx @vscode/vsce package --target darwin-arm64
 Other supported package targets:
 
 - `linux-x64`
+- `linux-arm64`
 - `darwin-x64`
 - `darwin-arm64`
 - `win32-x64`
+- `win32-arm64`
 
 Install the packaged extension into local VS Code:
 
@@ -190,15 +192,17 @@ Releasing is a two-stage pipeline built from two GitHub Actions workflows:
 3. The `release.yml` workflow then:
     - reads the version from `package.json` and derives the release tag, for example `v0.0.4`
     - creates the GitHub Release for that tag if it does not exist yet, with generated notes, marked as latest
-    - builds platform-specific VSIX files in a matrix on Linux, macOS Apple Silicon (`macos-latest`), macOS Intel (`macos-15-intel`), and Windows
+    - builds platform-specific VSIX files in a matrix on Linux x64/arm64 (`ubuntu-24.04`/`ubuntu-24.04-arm`), macOS Apple Silicon (`macos-latest`), macOS Intel (`macos-15-intel`), and Windows x64/arm64 (`windows-latest`/`windows-11-arm`)
     - uploads each VSIX to that release with `--clobber`, so re-runs replace the existing assets
 
 Produced release assets:
 
 - `code-viewer-bot-linux-x64.vsix`
+- `code-viewer-bot-linux-arm64.vsix`
 - `code-viewer-bot-darwin-arm64.vsix`
 - `code-viewer-bot-darwin-x64.vsix`
 - `code-viewer-bot-win32-x64.vsix`
+- `code-viewer-bot-win32-arm64.vsix`
 
 There is no separate git tag push step. The tag is created by the workflow from `package.json`, so if you push more commits to `main` without bumping the version, the same release is reused and its VSIX assets are overwritten.
 
@@ -206,10 +210,10 @@ There is no separate git tag push step. The tag is created by the workflow from 
 
 Publishing to the Marketplace never happens automatically. It is a deliberate, separate step:
 
-1. Confirm stage 1 finished and the GitHub Release contains all four VSIX files.
+1. Confirm stage 1 finished and the GitHub Release contains all six VSIX files.
 2. Run the `Publish VS Code Extension to Marketplace` workflow manually from the Actions tab.
 3. Enter the `version` input without the leading `v`, for example `0.0.4`.
-4. The workflow downloads the `code-viewer-bot-*.vsix` assets from the `v<version>` release, verifies that all four expected platform files are present, and fails early if any are missing.
+4. The workflow downloads the `code-viewer-bot-*.vsix` assets from the `v<version>` release, verifies that all six expected platform files are present, and fails early if any are missing.
 5. Each VSIX is published with `vsce publish --packagePath ... --skip-duplicate`, so an already-published platform build is skipped instead of failing the run.
 
 The publish stage requires a `VSCE_PAT` repository secret with Marketplace publish rights for the `kalpakus` publisher. It publishes the artifacts built in stage 1 and never rebuilds them, so what reaches the Marketplace is byte-identical to what is attached to the GitHub Release.
