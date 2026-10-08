@@ -1,6 +1,11 @@
+const crypto = require('node:crypto');
 const vscode = require('vscode');
 const { PANEL_TYPE } = require('../constants');
 const { getConfigPanelHtml } = require('./config-panel-html');
+
+// CSP script-src nonce. Freshly generated per panel so a leaked or guessed value from one
+// webview session can't authorize a script tag in another.
+const getNonce = () => crypto.randomBytes(16).toString('base64');
 
 const createConfigPanel = ({ extensionContext, onSave, getState }) => {
     let panel = null;
@@ -29,11 +34,12 @@ const createConfigPanel = ({ extensionContext, onSave, getState }) => {
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
-                retainContextWhenHidden: true
+                retainContextWhenHidden: true,
+                localResourceRoots: []
             }
         );
 
-        panel.webview.html = getConfigPanelHtml();
+        panel.webview.html = getConfigPanelHtml(getNonce());
         panel.onDidDispose(
             () => {
                 panel = null;

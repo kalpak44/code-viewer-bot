@@ -9,9 +9,11 @@ module.exports = {
     collectCoverageFrom: ['src/**/*.js'],
     // Per-path only, no `global` block: Jest takes every path-matched file out of the
     // global pool, so a global threshold would measure just extension.js, mouse-bot.js,
-    // config-panel.js, workspace-navigator.js and instance-coordinator.js — the modules
-    // that require `vscode` or the native `robotjs` and cannot load outside a VS Code
-    // host. These per-path floors are the real gate.
+    // config-panel.js and workspace-navigator.js — the modules that require `vscode` or
+    // the native `robotjs` and cannot load outside a VS Code host. These per-path floors
+    // are the real gate. instance-coordinator.js also requires `vscode`, but only reads
+    // `workspace.name`/`workspace.workspaceFolders` from it, which a plain object mock
+    // satisfies — its fs and crypto calls are mockable the same way.
     coverageThreshold: {
         './src/utils/': {
             statements: 100,
@@ -30,6 +32,12 @@ module.exports = {
             branches: 85,
             functions: 85,
             lines: 90
+        },
+        './src/services/instance-coordinator.js': {
+            statements: 100,
+            branches: 95,
+            functions: 100,
+            lines: 100
         },
         './src/ui/config-panel-html.js': {
             statements: 100,
