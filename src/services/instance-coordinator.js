@@ -60,8 +60,14 @@ const createInstanceCoordinator = ({ extensionContext, logger, initialConfig, on
         }
     };
 
+    // Identity only, not the full lease payload: writeLease stamps a fresh updatedAt on
+    // every heartbeat, so comparing the whole object would call this "changed" every 4s
+    // forever and spam the log and onChange even while the same instance keeps the lease.
+    const ownerIdentity = (value) =>
+        value && `${value.instanceId}:${Boolean(value.singleInstanceDisabled)}`;
+
     const setOwnerState = (nextOwner, nextIsOwner) => {
-        const ownerChanged = JSON.stringify(owner) !== JSON.stringify(nextOwner);
+        const ownerChanged = ownerIdentity(owner) !== ownerIdentity(nextOwner);
         const ownershipChanged = isOwner !== nextIsOwner;
         owner = nextOwner;
         isOwner = nextIsOwner;
@@ -164,13 +170,22 @@ const createInstanceCoordinator = ({ extensionContext, logger, initialConfig, on
 
     const updateConfig = async (nextConfig) => {
         const previousSingleInstance = config.instanceControl.singleInstance;
+        const singleInstanceChanged =
+            previousSingleInstance !== nextConfig.instanceControl.singleInstance;
+
+        // Release while `config` still says singleInstance is on: releaseOwnership's own
+        // early exit for a disabled config would otherwise see the new value here and skip
+        // deleting the lock file, orphaning it on disk.
+        if (singleInstanceChanged && !nextConfig.instanceControl.singleInstance) {
+            await releaseOwnership();
+        }
+
         config = nextConfig;
 
-        if (previousSingleInstance !== nextConfig.instanceControl.singleInstance) {
+        if (singleInstanceChanged) {
             if (nextConfig.instanceControl.singleInstance) {
                 await refreshOwnership();
             } else {
-                await releaseOwnership();
                 setOwnerState(
                     {
                         instanceId,

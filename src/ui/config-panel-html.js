@@ -1,8 +1,9 @@
-const getConfigPanelHtml = () => `<!DOCTYPE html>
+const getConfigPanelHtml = (nonce) => `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';" />
     <title>Code Viewer Bot</title>
     <style>
         :root {
@@ -391,7 +392,7 @@ const getConfigPanelHtml = () => `<!DOCTYPE html>
 
     </div>
 
-    <script>
+    <script nonce="${nonce}">
         const vscode = acquireVsCodeApi();
         const windowsRoot = document.getElementById('windows');
         const scheduleSummary = document.getElementById('scheduleSummary');

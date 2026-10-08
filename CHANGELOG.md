@@ -4,6 +4,19 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.1]
+
+- Added a Content-Security-Policy to the configuration webview, with a per-session nonce
+  on its inline script.
+- Fixed the cross-window instance lease logging and re-emitting state on every 4-second
+  heartbeat even when ownership hadn't changed, because the change check compared the
+  full lease payload instead of just who owns it.
+- Fixed disabling single-window coordination leaving a stale lock file on disk instead of
+  releasing it, because `updateConfig` applied the new config before the release check
+  that depends on the old one.
+- Added full test coverage for the cross-window instance coordinator (previously
+  untested), including the two bugs above and the lease handoff between two windows.
+
 ## [0.1.0]
 
 - Fixed `robotjs` failing to load on every platform since 0.0.6: `.vscodeignore` dropped

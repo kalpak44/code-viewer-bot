@@ -1,6 +1,7 @@
 const { getConfigPanelHtml } = require('../src/ui/config-panel-html');
 
-const html = getConfigPanelHtml();
+const NONCE = 'test-nonce';
+const html = getConfigPanelHtml(NONCE);
 
 describe('the config panel document', () => {
     test('is a complete HTML document', () => {
@@ -17,8 +18,25 @@ describe('the config panel document', () => {
         expect(counts.filter(([, open, close]) => open !== close)).toEqual([]);
     });
 
-    test('is deterministic', () => {
-        expect(getConfigPanelHtml()).toBe(html);
+    test('is deterministic for the same nonce', () => {
+        expect(getConfigPanelHtml(NONCE)).toBe(html);
+    });
+});
+
+describe('the content security policy', () => {
+    test('only the nonced script may run, and no other origin is reachable', () => {
+        expect(html).toContain(
+            `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${NONCE}';" />`
+        );
+    });
+
+    test('the script tag carries the same nonce the policy allows', () => {
+        expect(html).toContain(`<script nonce="${NONCE}">`);
+    });
+
+    test('a different nonce produces a document the first nonce no longer authorizes', () => {
+        const otherHtml = getConfigPanelHtml('different-nonce');
+        expect(otherHtml).not.toContain(`nonce="${NONCE}"`);
     });
 });
 
