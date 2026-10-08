@@ -9,7 +9,7 @@ Code Viewer Bot is maintained as a single moving line. Only the latest published
 | Latest release (see [Releases](https://github.com/kalpak44/code-viewer-bot/releases)) | yes       |
 | Any older release                                                                     | no        |
 
-If you are affected by an issue, upgrade to the latest release first. Fixes are shipped as a new version through the normal release pipeline described in the [README](./README.md#release-pipeline): a version bump on `main` produces a GitHub Release with platform VSIX files, followed by a manual Marketplace publish.
+If you are affected by an issue, upgrade to the latest release first. Fixes are shipped as a new version through the normal release pipeline described in the [README](./README.md#release-pipeline): a tag push builds platform VSIX files, creates the GitHub Release, and publishes to the Marketplace automatically.
 
 ## Reporting a Vulnerability
 

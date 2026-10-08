@@ -4,6 +4,16 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.0]
+
+- Fixed `robotjs` failing to load on every platform since 0.0.6: `.vscodeignore` dropped
+  `node-gyp-build` and the `robotjs` native prebuilds from the packaged VSIX.
+- Added `linux-arm64` and `win32-arm64` as built and published platform targets, for six total.
+- Added a release-pipeline smoke test that loads `robotjs` from each packaged VSIX before
+  it's accepted, so a packaging regression like the one above fails the build instead of shipping.
+- Rewrote `README.md` for the Marketplace listing: Marketplace badges, a features summary,
+  required OS permissions, a supported-platforms table, and a troubleshooting section.
+
 ## [0.0.5]
 
 - Added `SECURITY.md` with the supported-version policy, private vulnerability reporting process, scope, and the extension's security model.
