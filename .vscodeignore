@@ -23,3 +23,7 @@ node_modules/**
 !node_modules/robotjs/package.json
 !node_modules/robotjs/LICENSE.md
 !node_modules/robotjs/build/Release/robotjs.node
+!node_modules/robotjs/prebuilds/**
+!node_modules/node-gyp-build/index.js
+!node_modules/node-gyp-build/node-gyp-build.js
+!node_modules/node-gyp-build/package.json
