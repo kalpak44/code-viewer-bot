@@ -1,254 +1,193 @@
 # Code Viewer Bot
 
-Code Viewer Bot is a Visual Studio Code extension that starts automatically after VS Code finishes launching, waits for user idle time, and then can:
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/kalpakus.code-viewer-bot?label=Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=kalpakus.code-viewer-bot)
+[![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/kalpakus.code-viewer-bot)](https://marketplace.visualstudio.com/items?itemName=kalpakus.code-viewer-bot)
+[![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/stars/kalpakus.code-viewer-bot)](https://marketplace.visualstudio.com/items?itemName=kalpakus.code-viewer-bot&ssr=false#review-details)
+[![Release](https://img.shields.io/github/v/release/kalpak44/code-viewer-bot)](https://github.com/kalpak44/code-viewer-bot/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/kalpak44/code-viewer-bot)](./LICENSE.md)
 
-- move the mouse in a small loop to keep activity going
-- open files from the current workspace on a timed interval
-- run only inside configured schedule windows
+Code Viewer Bot keeps your VS Code window looking active while you're away from the
+keyboard. After you've been idle for a bit, it can move the cursor in a small loop and
+browse through files in your workspace — useful for screen-lock timeouts, status
+indicators that care about "away" state, or simply keeping a demo screen alive.
 
-It is designed for local desktop use and depends on `robotjs` for native mouse control.
+It runs entirely on your machine. Nothing is sent over the network, and the bot stays
+off outside the schedule windows you configure.
 
-When multiple VS Code windows are open, the extension can coordinate so only one window owns execution at a time while the others remain in standby.
+## Features
 
-## What It Does
-
-When the extension is active, it evaluates three conditions:
-
-1. The current time must be inside an allowed schedule window.
-2. The mouse must have been idle for at least the configured motion idle interval.
-3. If workspace browsing is enabled, the mouse must remain idle for the separate workspace idle interval before file rotation starts.
-
-Once those conditions are met, the extension can:
-
-- move the cursor in a circular pattern
-- browse files from the workspace using either:
-    - the most common text-file extension in the workspace
-    - a manually selected extension such as `.js` or `.ts`
-- reuse the same editor tab or open files in new tabs
-
-## Open the Configuration
-
-Open the configuration panel in either of these ways:
-
-- Command Palette: `Code Viewer Bot: Configure Bot`
-- Shortcut on macOS: `⌘⌥B`
-- Shortcut on Windows/Linux: `Ctrl+Alt+B`
-
-### Step 1: Open the Command Palette
-
-![Configuration command in the palette](docs/screenshots/command_palette_open.png)
-
-### Step 2: Select the Extension Command
-
-![Code Viewer Bot command option](docs/screenshots/configurations_palette_option.png)
-
-### Step 3: Configure the Bot
-
-![Extension configuration panel](docs/screenshots/extension_configurations.png)
-
-## How To Configure It
-
-The configuration panel is split into three areas.
-
-It also shows two runtime identity fields at the top:
-
-- `This window`: the current VS Code window identity
-- `Active window`: the window that currently owns bot execution
-
-### Motion
-
-These settings control cursor movement after idle:
-
-- `Move the mouse automatically while the bot is active`: enables or disables mouse motion without affecting workspace file rotation
-- `Idle before motion (sec)`: how long the mouse must remain idle before cursor movement can start
-- `Radius (px)`: the size of the circular movement
-- `Speed (degrees)`: how many degrees are advanced on each rotation tick
-- `Rotate interval (ms)`: how often the cursor position is updated
-- `Poll interval (ms)`: how often the extension checks mouse state and schedule state
-- `Tolerance (px)`: how much cursor drift is allowed before movement is treated as real user input
-
-### Workspace
-
-These settings control automatic file browsing:
-
-- `Open workspace files automatically while the bot is active`: enables workspace file rotation
-- `File source`:
-    - `Use the most common extension`: automatically chooses the most common text-file extension in the workspace
-    - `Use a specific extension`: rotates only files matching the chosen extension
-- `Open behavior`:
-    - `Reuse same tab`: closes the current active editor before opening the next file
-    - `Open new tab`: keeps opening files in additional editor tabs
-- `Idle before file browsing`: separate idle threshold before file browsing starts
-- `Delay between file opens`: wait time between file transitions
-- `Exclude glob`: paths to ignore while scanning the workspace
-
-### Schedule
-
-These settings control when the bot is allowed to run:
-
-- `Only run inside scheduled windows`: enables schedule gating
-- `Random offset (minutes)`: adds per-day jitter to each configured window start and end
-- schedule windows: one or more start/end time ranges for the day
-
-If schedule mode is enabled, the extension does nothing outside the generated daily schedule.
-
-### Instance Control
-
-- `Allow only one VS Code window to run the bot`: keeps one window active and places the others in standby
+- **Idle-triggered mouse movement** — a small circular motion that resets once real user
+  input is detected
+- **Automatic file browsing** — opens workspace files on a timer, by the workspace's most
+  common text-file extension or one you choose
+- **Schedule windows** — confine the bot to specific times of day, with optional random
+  jitter so the pattern doesn't look mechanical
+- **Multi-window aware** — when several VS Code windows are open, only one runs the bot
+  at a time; the rest stay in standby
+- **Zero network access** — everything runs locally; the bot reads only your workspace
+  file list and local cursor/idle state
 
 ## Install
 
-The extension is published to the Visual Studio Marketplace as `kalpakus.code-viewer-bot`, and each release also attaches platform-specific `.vsix` files to GitHub Releases.
+**From the Marketplace** (recommended): search for **Code Viewer Bot** in the VS Code
+Extensions view, or install directly:
 
-### Install From a Release
+```sh
+code --install-extension kalpakus.code-viewer-bot
+```
 
-Install a packaged `.vsix` from the GitHub Releases page:
+Or open the [Marketplace listing](https://marketplace.visualstudio.com/items?itemName=kalpakus.code-viewer-bot) and click **Install**.
 
-[GitHub Releases](https://github.com/kalpak44/code-viewer-bot/releases)
+**From a GitHub Release**: every release attaches a platform-specific `.vsix` to
+[GitHub Releases](https://github.com/kalpak44/code-viewer-bot/releases). Download the one
+matching your platform (see [Supported Platforms](#supported-platforms)), then in VS Code:
+`Extensions` → `...` menu → `Install from VSIX...`.
 
-In VS Code:
+## Permissions
 
-1. Open `Extensions`
-2. Click the `...` menu
-3. Choose `Install from VSIX...`
-4. Select the downloaded `.vsix`
+The bot uses [`robotjs`](https://github.com/octalmage/robotjs) for native mouse control,
+which needs OS-level input permissions:
 
-## Build and Install Locally
+- **macOS**: VS Code (or your terminal, if run from `code .`) needs **Accessibility**
+  permission under `System Settings → Privacy & Security → Accessibility`. Without it,
+  the configuration panel reports that `robotjs` is unavailable instead of silently
+  failing.
+- **Windows**: no extra permission is needed; cursor control works out of the box.
+- **Linux**: requires an active X11 session. Wayland is not supported by `robotjs`.
+
+No permission beyond cursor/keyboard control is requested, and the extension never reads
+file contents beyond deciding whether a file looks like text for the purpose of opening
+it in the editor.
+
+## Configure
+
+Open the configuration panel from the Command Palette (`Code Viewer Bot: Configure Bot`),
+or `⌘⌥B` on macOS / `Ctrl+Alt+B` on Windows and Linux.
+
+![Configuration command in the palette](docs/screenshots/command_palette_open.png)
+![Code Viewer Bot command option](docs/screenshots/configurations_palette_option.png)
+![Extension configuration panel](docs/screenshots/extension_configurations.png)
+
+The panel also shows two runtime identity fields: `This window` (the current window) and
+`Active window` (the window currently running the bot).
+
+### Motion
+
+- `Move the mouse automatically while the bot is active`: toggles cursor movement
+  independently of file rotation
+- `Idle before motion (sec)`: idle time required before cursor movement starts
+- `Radius (px)` / `Speed (degrees)` / `Rotate interval (ms)`: shape of the circular motion
+- `Poll interval (ms)`: how often idle and schedule state is re-checked
+- `Tolerance (px)`: cursor drift allowed before it's treated as real user input
+
+### Workspace
+
+- `Open workspace files automatically while the bot is active`: toggles file rotation
+- `File source`: the workspace's most common text-file extension, or one you pick
+- `Open behavior`: reuse the current tab, or keep opening new tabs
+- `Idle before file browsing`: separate idle threshold from motion
+- `Delay between file opens` / `Exclude glob`: pacing and paths to skip while scanning
+
+### Schedule
+
+- `Only run inside scheduled windows`: confines the bot to one or more daily time ranges
+- `Random offset (minutes)`: per-day jitter added to each window's start and end
+
+Outside an enabled schedule, the bot does nothing.
+
+### Instance Control
+
+- `Allow only one VS Code window to run the bot`: keeps one window active, others standby
+
+## Supported Platforms
+
+Every release ships a native build for each of these, verified in CI by actually loading
+the native binding from the packaged `.vsix` before it's published:
+
+| Platform            | VSIX asset                          |
+| ------------------- | ----------------------------------- |
+| Linux x64           | `code-viewer-bot-linux-x64.vsix`    |
+| Linux ARM64         | `code-viewer-bot-linux-arm64.vsix`  |
+| macOS Apple Silicon | `code-viewer-bot-darwin-arm64.vsix` |
+| macOS Intel         | `code-viewer-bot-darwin-x64.vsix`   |
+| Windows x64         | `code-viewer-bot-win32-x64.vsix`    |
+| Windows ARM64       | `code-viewer-bot-win32-arm64.vsix`  |
+
+## Troubleshooting
+
+- **"robotjs is not available" warning**: on macOS, check Accessibility permission (see
+  [Permissions](#permissions)); on Linux, confirm an X11 session is active.
+- **Nothing happens**: check the configuration panel status first — the bot may be
+  outside its scheduled window, or still waiting for the configured idle interval.
+- **Workspace browsing skips a file**: only text-like files are opened; files that look
+  binary are skipped on purpose.
+
+## Security
+
+Vulnerability reports and the supported-version policy are documented in
+[`SECURITY.md`](./SECURITY.md). Please do not open a public issue for a suspected
+vulnerability.
+
+## Contributing / Development
 
 ### Prerequisites
 
 - Node.js and npm
 - VS Code
-- native build prerequisites required by `robotjs`
+- native build prerequisites required by `robotjs` (only needed if a local install can't
+  use a prebuilt binary for your platform)
 
-Install dependencies:
+### Build and run locally
 
 ```sh
 npm install
-```
-
-Build the extension bundle:
-
-```sh
 npm run build
 ```
 
-Package a local VSIX for Apple Silicon macOS:
+For live development, open this repository in VS Code and press `F5` to launch an
+Extension Development Host.
+
+### Package a local VSIX
 
 ```sh
 npx @vscode/vsce package --target darwin-arm64
 ```
 
-Other supported package targets:
-
-- `linux-x64`
-- `linux-arm64`
-- `darwin-x64`
-- `darwin-arm64`
-- `win32-x64`
-- `win32-arm64`
-
-Install the packaged extension into local VS Code:
+Valid `--target` values: `linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`,
+`win32-x64`, `win32-arm64`.
 
 ```sh
-code --install-extension code-viewer-bot-darwin-arm64-0.0.4.vsix
+code --install-extension code-viewer-bot-darwin-arm64-0.1.0.vsix --force
+code --uninstall-extension kalpakus.code-viewer-bot
 ```
 
-Replace an existing local install:
+### Release pipeline
 
-```sh
-code --install-extension code-viewer-bot-darwin-arm64-0.0.4.vsix --force
-```
+Releasing is driven by a single workflow,
+[`.github/workflows/release.yml`](./.github/workflows/release.yml), triggered by a `v*`
+tag:
 
-Remove the extension from local VS Code:
+1. Bump `version` in [`package.json`](./package.json) (and add a [`CHANGELOG.md`](./CHANGELOG.md) entry), commit, tag `v<version>`, and push with the tag.
+2. The workflow verifies (format, lint, tests, Sonar gate), then builds all six platform
+   VSIX files in parallel, loading `robotjs` from each packaged `.vsix` before it's
+   accepted.
+3. It creates the GitHub Release for that tag with generated notes and all six assets,
+   then publishes each VSIX to the Marketplace automatically.
 
-```sh
-code --uninstall-extension kalpak44.code-viewer-bot
-```
+A push to `main` that doesn't carry a new tag only re-verifies; it never builds or
+publishes. Dependency updates are proposed daily by Dependabot
+([`.github/dependabot.yml`](./.github/dependabot.yml)) and reviewed, repaired and merged
+by an automated maintenance agent, which also cuts the release tag once a sweep's merges
+are done.
 
-## Fast Local Development Flow
+### Runtime structure
 
-For extension development without packaging:
-
-1. Open this repository in VS Code.
-2. Press `F5`.
-3. Test the extension inside the Extension Development Host window.
-
-This is the fastest way to validate config changes and runtime behavior.
-
-## Release Pipeline
-
-Releasing is a two-stage pipeline built from two GitHub Actions workflows:
-
-| Stage                                       | Workflow                                                                                     | Trigger                            |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------- |
-| 1. Build and publish a GitHub Release       | [`./.github/workflows/release.yml`](./.github/workflows/release.yml)                         | automatic, on every push to `main` |
-| 2. Publish to the Visual Studio Marketplace | [`./.github/workflows/publish-marketplace.yml`](./.github/workflows/publish-marketplace.yml) | manual, `workflow_dispatch`        |
-
-### Stage 1: GitHub Release (automatic)
-
-1. Update the version in [`./package.json`](./package.json) and add the matching entry to [`./CHANGELOG.md`](./CHANGELOG.md).
-2. Commit and push to `main`.
-3. The `release.yml` workflow then:
-    - reads the version from `package.json` and derives the release tag, for example `v0.0.4`
-    - creates the GitHub Release for that tag if it does not exist yet, with generated notes, marked as latest
-    - builds platform-specific VSIX files in a matrix on Linux x64/arm64 (`ubuntu-24.04`/`ubuntu-24.04-arm`), macOS Apple Silicon (`macos-latest`), macOS Intel (`macos-15-intel`), and Windows x64/arm64 (`windows-latest`/`windows-11-arm`)
-    - uploads each VSIX to that release with `--clobber`, so re-runs replace the existing assets
-
-Produced release assets:
-
-- `code-viewer-bot-linux-x64.vsix`
-- `code-viewer-bot-linux-arm64.vsix`
-- `code-viewer-bot-darwin-arm64.vsix`
-- `code-viewer-bot-darwin-x64.vsix`
-- `code-viewer-bot-win32-x64.vsix`
-- `code-viewer-bot-win32-arm64.vsix`
-
-There is no separate git tag push step. The tag is created by the workflow from `package.json`, so if you push more commits to `main` without bumping the version, the same release is reused and its VSIX assets are overwritten.
-
-### Stage 2: Marketplace publish (manual)
-
-Publishing to the Marketplace never happens automatically. It is a deliberate, separate step:
-
-1. Confirm stage 1 finished and the GitHub Release contains all six VSIX files.
-2. Run the `Publish VS Code Extension to Marketplace` workflow manually from the Actions tab.
-3. Enter the `version` input without the leading `v`, for example `0.0.4`.
-4. The workflow downloads the `code-viewer-bot-*.vsix` assets from the `v<version>` release, verifies that all six expected platform files are present, and fails early if any are missing.
-5. Each VSIX is published with `vsce publish --packagePath ... --skip-duplicate`, so an already-published platform build is skipped instead of failing the run.
-
-The publish stage requires a `VSCE_PAT` repository secret with Marketplace publish rights for the `kalpakus` publisher. It publishes the artifacts built in stage 1 and never rebuilds them, so what reaches the Marketplace is byte-identical to what is attached to the GitHub Release.
-
-### Release discipline
-
-- keep `CHANGELOG.md` current for every release
-- bump `package.json` before the `main` push that should produce a release
-- test the packaged VSIX locally before pushing the release commit
-- treat the GitHub Release as the source of truth: only publish to the Marketplace from a release whose assets are complete
-
-### Dependency updates
-
-Dependabot is configured in [`./.github/dependabot.yml`](./.github/dependabot.yml) to check npm dependencies weekly. The transitive `yauzl` dependency is ignored because it cannot be resolved until `@vscode/vsce` widens its declared range.
-
-## Security
-
-Vulnerability reports and the supported-version policy are documented in [`./SECURITY.md`](./SECURITY.md). Please do not open a public issue for a suspected vulnerability.
-
-## Runtime Structure
-
-Key files:
-
-- runtime entrypoint: [`./src/extension.js`](./src/extension.js)
-- config normalization and persistence: [`./src/config/config-store.js`](./src/config/config-store.js)
-- core runtime behavior: [`./src/services/mouse-bot.js`](./src/services/mouse-bot.js)
-- workspace file rotation: [`./src/services/workspace-navigator.js`](./src/services/workspace-navigator.js)
-- schedule generation: [`./src/services/schedule-service.js`](./src/services/schedule-service.js)
-- webview UI: [`./src/ui/config-panel.js`](./src/ui/config-panel.js)
-
-## Notes
-
-- The extension uses `robotjs`, so OS-level accessibility or input-control permissions may be required depending on the platform.
-- Workspace browsing only opens text-like files and skips files that appear binary.
-- If nothing happens, check the config panel status first: the bot may simply be outside the active schedule window or still waiting for the configured idle interval.
+- runtime entrypoint: [`src/extension.js`](./src/extension.js)
+- config normalization and persistence: [`src/config/config-store.js`](./src/config/config-store.js)
+- core runtime behavior: [`src/services/mouse-bot.js`](./src/services/mouse-bot.js)
+- workspace file rotation: [`src/services/workspace-navigator.js`](./src/services/workspace-navigator.js)
+- schedule generation: [`src/services/schedule-service.js`](./src/services/schedule-service.js)
+- webview UI: [`src/ui/config-panel.js`](./src/ui/config-panel.js)
 
 ## License
 
