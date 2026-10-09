@@ -4,6 +4,10 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.2]
+
+- minor/patch dev-dependency lockfile bumps from #67
+
 ## [0.1.1]
 
 - Added a Content-Security-Policy to the configuration webview, with a per-session nonce
