@@ -4,6 +4,10 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.3]
+
+- patch/minor dev dependency bumps merged in #68
+
 ## [0.1.2]
 
 - minor/patch dev-dependency lockfile bumps from #67
