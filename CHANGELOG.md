@@ -4,6 +4,10 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.7]
+
+- dependency maintenance only; no consumer-facing change
+
 ## [0.1.6]
 
 - completed the dependency maintenance sweep
