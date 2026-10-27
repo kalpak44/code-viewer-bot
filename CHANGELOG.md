@@ -4,6 +4,10 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.10]
+
+- merged baseline-browser-mapping patch update
+
 ## [0.1.9]
 
 - three dependency maintenance updates merged; no consumer-facing API changes
