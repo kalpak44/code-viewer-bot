@@ -4,6 +4,10 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.11]
+
+- merged @napi-rs/wasm-runtime 1.2.5 to 1.2.6
+
 ## [0.1.10]
 
 - merged baseline-browser-mapping patch update
