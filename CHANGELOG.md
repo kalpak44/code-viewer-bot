@@ -4,6 +4,10 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.17]
+
+- merged unrs-resolver 1.12.2 to 1.13.0 dependency update
+
 ## [0.1.16]
 
 - semver patch updates merged
