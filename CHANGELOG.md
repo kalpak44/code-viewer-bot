@@ -4,6 +4,10 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.20]
+
+- merged dependabot dev dependency patch/minor updates
+
 ## [0.1.19]
 
 - merged marked 18.1.3 and napi-postinstall 0.3.8 dependency updates
