@@ -4,6 +4,10 @@ All notable changes to the "code-viewer-bot" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.26]
+
+- merged electron-to-chromium 1.5.485 to 1.5.489 dependency update
+
 ## [0.1.25]
 
 - patch and minor dependency updates merged in #111
